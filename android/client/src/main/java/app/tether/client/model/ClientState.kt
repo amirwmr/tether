@@ -265,6 +265,34 @@ class ClientState(private val link: LinkPort, private val fx: Effects) {
     }
     fun runSelftest() { selftest = null; link.send(T.SELFTEST, JSONObject(), expectReply = true); fx.changed() }
 
+    // ------------------------------------------------------------------ carrier codes (USSD)
+
+    /** The carrier's answer to a code: [text] when [ok], else [err] (the Android phone's words, or [Problem.NO_ANSWER]). */
+    data class UssdAnswer(val code: String, val ok: Boolean, val text: String?, val err: String?)
+
+    /** Whether the Android phone runs carrier codes (`status.tools.ussd`, from builds with the phone tools). */
+    val canUssd: Boolean get() = status?.optJSONObject("tools")?.optBoolean("ussd") == true
+    /** The code waiting for its answer (one at a time, as on the Android phone), and the last answer. */
+    var ussdPending: String? = null; private set
+    var ussdAnswer: UssdAnswer? = null; private set
+    private var ussdRequest = 0
+
+    /** Sends [code] on SIM [sub] through the Android phone; the answer comes as [ussdAnswer] (at most ~35 s). */
+    fun sendUssd(code: String, sub: Int?) {
+        if (!link.isConnected || ussdPending != null || !UssdCodes.valid(code)) return
+        ussdPending = code
+        ussdAnswer = null
+        ussdRequest = link.send(T.USSD_SEND, JSONObject().put("code", code).apply { sub?.let { put("sub", it) } }, expectReply = true)
+        // The Android phone answers within 30 s (its own timeout); a lost reply must not leave the screen waiting.
+        val asked = ussdRequest
+        fx.schedule(40_000) {
+            if (ussdPending == code && ussdRequest == asked) { ussdPending = null; ussdAnswer = UssdAnswer(code, false, null, Problem.NO_ANSWER); fx.changed() }
+        }
+        fx.changed()
+    }
+
+    fun clearUssd() { ussdAnswer = null; fx.changed() }
+
     // ------------------------------------------------------------------ sync and texts
 
     /** [caps]: the extensions this client speaks (protocol §7.2); left out of the sync when there are none. */
@@ -470,6 +498,13 @@ class ClientState(private val link: LinkPort, private val fx: Effects) {
                 if (re != null) netPending = null
             }
             T.SELFTEST_RESULT -> selftest = b
+            T.USSD_RESULT -> {
+                // Only the answer to this client's own pending code.
+                val code = ussdPending ?: return true
+                if (re != null && re != ussdRequest) return true
+                ussdPending = null
+                ussdAnswer = UssdAnswer(code, b.optBoolean("ok"), b.optStringOrNull("text"), b.optStringOrNull("err"))
+            }
             T.ERROR -> problem = Problem(Problem.OTHER, b.optString("msg"))
             T.PONG, T.PING -> return true
             else -> return false

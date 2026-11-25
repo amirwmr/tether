@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- Android client: **USSD codes** (carrier codes such as *123#). A new button under the call buttons on the keypad
+  opens a screen where you:
+  - choose the SIM, type a code and see the carrier's answer;
+  - answer a menu by typing your choice: it is sent as a new code that carries it (*123# then 2 sends *123*2#), which
+    most carriers accept;
+  - send a recent code again with one tap.
+
+  A code typed on the keypad and sent with a call button runs as USSD on that SIM, as on a phone's own dialer. It
+  uses the SIM phone's existing carrier-code support (`ussd.send`): no protocol change, and the SIM phone's app needs
+  no update. Like Android's USSD API, it gets one answer per code.
+
 - SIM phone: no notification sound before the ringtone. The incoming-call notification's channel played the default
   notification sound just before Android's ringtone. It is now a silent channel; the ringtone and its vibration are
   Android's, unchanged.
