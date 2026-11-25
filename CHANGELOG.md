@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- SIM phone: once Tether's call screen is up, the incoming-call notification no longer pops up over it and keeps the
+  screen awake. It stays in the notification bar with Answer and Decline, on a quiet channel ("Call in progress
+  (quiet)"). The ringtone is unchanged: Android plays it. The next call starts with the usual pop-up again.
+
 - SIM phone: **Take the call here.** The call screen on the phone with the SIMs has a new button while the call's
   audio is on the phone in your hand. It moves the call to the SIM phone's own earpiece and microphone, as for a call
   answered there. The client shows the call "on <SIM phone>" and can take it back with **Move here**. No protocol
