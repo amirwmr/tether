@@ -19,13 +19,6 @@ updates:
       gradle:
         patterns: ["*"]
         update-types: ["minor", "patch"]
-  - package-ecosystem: swift
-    directories: ["/", "/ios/TetherCore"]
-    schedule: {interval: weekly}
-    labels: ["dependencies"]
-    groups:
-      swift:
-        patterns: ["*"]
   - package-ecosystem: github-actions
     directory: "/"
     schedule: {interval: weekly}

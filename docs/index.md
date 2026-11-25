@@ -24,7 +24,6 @@ Android phone, over an end-to-end encrypted Bluetooth link with no server and no
 
 ## Build on it
 
-- [Swift SDK](SDK-swift.md) and its [API reference](swift/documentation/tethercore/)
 - [Kotlin SDK](SDK-kotlin.md) and its [API reference](kotlin/)
 - [Extending the protocol](EXTENDING.md)
 - [Protocol](https://github.com/amirwmr/tether/blob/main/protocol/PROTOCOL.md)

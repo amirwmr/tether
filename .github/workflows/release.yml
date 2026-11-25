@@ -1,6 +1,5 @@
 # Builds and publishes a GitHub Release when a version tag (v1.2.3, v1.2.3-rc.1) is pushed: Android APKs of the A54
-# app and the Android client, an unsigned iPhone app (.ipa) for sideloading tools that re-sign, SHA256SUMS and build
-# provenance attestations, and altstore.json (an AltStore / SideStore source for the IPA, tools/altstore-source.py).
+# app and the Android client, SHA256SUMS and build provenance attestations.
 # Tags are made by tools/release.sh; see docs/RELEASING.md.
 name: Release
 on:
@@ -39,13 +38,7 @@ jobs:
           if [ "v$version" != "$TAG" ]; then
             echo "::error::tag $TAG does not match VERSION ($version)"; exit 1
           fi
-          marketing=${version%%-*}
-          grep -q "^    MARKETING_VERSION: \"$marketing\"" ios/project.yml ||
-            { echo "::error::ios/project.yml MARKETING_VERSION is not $marketing (run tools/release.sh)"; exit 1; }
           sudo apt-get install -y zsh >/dev/null
-          code=$(zsh tools/release.sh --code "$version")
-          grep -q "^    CURRENT_PROJECT_VERSION: \"$code\"" ios/project.yml ||
-            { echo "::error::ios/project.yml CURRENT_PROJECT_VERSION is not $code (run tools/release.sh)"; exit 1; }
           zsh tools/release.sh --notes "$version" > /dev/null ||
             { echo "::error::CHANGELOG.md has no section '## $version'"; exit 1; }
           case $version in *-*) pre=true ;; *) pre=false ;; esac
@@ -110,44 +103,9 @@ jobs:
           path: dist/
           if-no-files-found: error
 
-  apple:
-    name: iPhone app (unsigned) and Swift package
-    needs: check
-    runs-on: macos-15
-    timeout-minutes: 45
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          ref: ${{ env.TAG }}
-      - name: Swift package TetherCore builds at this tag
-        working-directory: ios/TetherCore
-        run: swift build -c release
-      - name: XcodeGen
-        run: brew install xcodegen && cd ios && xcodegen generate --quiet
-      - name: iPhone app (Release, unsigned)
-        working-directory: ios
-        run: >
-          xcodebuild -project Tether.xcodeproj -scheme Tether -configuration Release
-          -destination 'generic/platform=iOS' -derivedDataPath build-release -skipMacroValidation
-          CODE_SIGNING_ALLOWED=NO build -quiet
-      - name: Package the IPA
-        env:
-          VERSION: ${{ needs.check.outputs.version }}
-        run: |
-          app=$(find ios/build-release/Build/Products/Release-iphoneos -maxdepth 1 -name '*.app' | head -1)
-          /usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' -c 'Print CFBundleVersion' "$app/Info.plist"
-          mkdir -p work/Payload dist
-          cp -R "$app" work/Payload/
-          (cd work && zip -qry "../dist/Tether-$VERSION-unsigned.ipa" Payload)
-      - uses: actions/upload-artifact@v7
-        with:
-          name: ios
-          path: dist/
-          if-no-files-found: error
-
   release:
     name: GitHub Release
-    needs: [check, android, apple]
+    needs: [check, android]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -162,26 +120,12 @@ jobs:
         with:
           path: dist
           merge-multiple: true
-      - name: AltStore / SideStore source (stable address releases/latest/download/altstore.json)
-        env:
-          VERSION: ${{ needs.check.outputs.version }}
-        run: |
-          sudo apt-get install -y zsh >/dev/null
-          zsh tools/release.sh --notes "$VERSION" > "$RUNNER_TEMP/ipa-notes.txt"
-          ipa=$(ls dist/*.ipa)
-          python3 tools/altstore-source.py make --ipa "$ipa" --version "$VERSION" --date "$(date -u +%Y-%m-%d)" \
-            --notes-file "$RUNNER_TEMP/ipa-notes.txt" \
-            --download-url "https://github.com/${{ github.repository }}/releases/download/$TAG/$(basename "$ipa")" \
-            --out dist/altstore.json
-          python3 tools/altstore-source.py validate dist/altstore.json
       - name: Checksums
         working-directory: dist
         run: sha256sum -- * > SHA256SUMS && cat SHA256SUMS
       - uses: actions/attest-build-provenance@v4
         with:
-          subject-path: |
-            dist/*.apk
-            dist/*.ipa
+          subject-path: dist/*.apk
       - name: Release notes
         env:
           VERSION: ${{ needs.check.outputs.version }}
@@ -202,14 +146,10 @@ jobs:
             echo "| File | Install it on |"
             echo "| --- | --- |"
             echo "| \`Tether-A54-$VERSION*.apk\` | **The Android phone with the SIM cards** (any Android 10+ phone, not only an A54). Everyone needs this one. |"
-            echo "| \`Tether-$VERSION-unsigned.ipa\` | **Your iPhone or iPad** (iOS 16+). Sideload it with SideStore, AltStore or Sideloadly and your own Apple ID. |"
-            echo "| \`Tether-Client-$VERSION*.apk\` | **A second Android phone** used instead of an iPhone (only if you have no iPhone). |"
+            echo "| \`Tether-Client-$VERSION*.apk\` | **A second Android phone** in your hand. |"
             echo
-            echo "- **AltStore / SideStore source** (add it once, then install and update from the app):"
-            echo "  \`https://github.com/${{ github.repository }}/releases/latest/download/altstore.json\`"
             echo "- Step by step: [Install guide](https://github.com/${{ github.repository }}/blob/main/docs/INSTALL.md) ·"
             echo "  [راهنمای فارسی](https://github.com/${{ github.repository }}/blob/main/docs/fa/README.md)"
-            echo "- A free Apple ID signs the iPhone app for 7 days; refresh it before then (your data and pairing are kept)."
             echo "- From source: check out tag \`v$VERSION\` and follow docs/BUILD.md."
             echo
             echo "## Verify"

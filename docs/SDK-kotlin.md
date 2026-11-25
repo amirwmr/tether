@@ -84,7 +84,7 @@ API reference (Dokka): `cd android && ./gradlew -Ptether.libraryOnly=true :core:
 
 The rules a client must follow (two pairing-code forms, an empty PSM means GATT, the microphone only once the call is
 active, `status.helper.audio`, audio gaps with Bluetooth tethering) are the same for every language:
-[SDK-swift.md › Writing a client](SDK-swift.md#writing-a-client-what-the-phone-expects). The Android client
+[PROTOCOL.md](../protocol/PROTOCOL.md). The Android client
 (`android/client`) is a complete Kotlin implementation of them.
 
 ## Examples

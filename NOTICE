@@ -16,25 +16,6 @@ ZXing core and the Kotlin standard library from this list):
 | Kotlin standard library, AndroidX annotations | | Apache-2.0 | |
 | Gradle wrapper | | Apache-2.0 | Build |
 
-The iPhone app uses Apple's frameworks, one vendored C library and Swift packages fetched by Swift Package Manager
-at build time (versions pinned in `ios/Tether.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved`):
-
-| Library | Version | Licence | Used for |
-| --- | --- | --- | --- |
-| libopus (`ios/TetherCore/Sources/COpus`, unmodified sources, floating point, no assembly; licence in `COPYING` there) | 1.5.2 | BSD 3-Clause | Opus decoding with packet-loss concealment and encoding on the iPhone |
-| swift-perception (Point-Free) | 2.0.12 | MIT | Observation on iOS 16 (native Observation on iOS 17 and later) |
-| swift-issue-reporting (Point-Free) | 2.1.2 | MIT | Dependency of swift-perception |
-| swift-syntax (Swift project) | 604.0.0 | Apache-2.0 with Runtime Library Exception | Build time only: swift-perception's macros |
-
-The Swift SDK (the root `Package.swift`, the same TetherCore sources and libopus as above) adds these packages, fetched
-by Swift Package Manager when another package depends on it:
-
-| Library | Version | Licence | Used for |
-| --- | --- | --- | --- |
-| swift-crypto (Apple) | 3.x or 4.x | Apache-2.0 | P-256, HKDF, AES-GCM on Linux and other platforms without CryptoKit (Apple platforms use CryptoKit; it is not linked there) |
-| swift-asn1 (Apple), via swift-crypto | | Apache-2.0 | Dependency of swift-crypto |
-| swift-docc-plugin and swift-docc-symbolkit (Swift project) | 1.x | Apache-2.0 | Build time only: `swift package generate-documentation`; nothing of it is in a built product |
-
 LGPL note: spake2-android is used as an unmodified library. If you distribute an APK built from this project, the
 LGPL-3.0 applies to that component: provide its source (https://github.com/MuntashirAkon/spake2-java) and allow it
 to be replaced, for example by pointing to this repository's build instructions.

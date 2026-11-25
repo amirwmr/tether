@@ -1,14 +1,11 @@
 # Wire fixtures
 
 Golden bodies of every control message in [PROTOCOL.md](../PROTOCOL.md) §5, one file per type, exactly as the
-producing side emits them today. Both implementations test against the same files, so a change on one side that
-the other cannot read fails a test instead of a call:
+producing side emits them today. The Kotlin implementation tests against these files:
 
 - Android (the phone): `android/core/src/test/java/app/tether/core/ContractTest.kt` checks that every body a client
   sends has the fields and JSON types `Hub` reads, that the bodies built by `Sms`, `Contact`, `CallEntry`, `CallInfo`
   and `idRanges` equal their fixtures, and that `T` and §5 name the same types.
-- iPhone: `ios/TetherCore/Tests/TetherCoreTests/ContractTests.swift` decodes every body the iPhone receives, encodes
-  every body it sends back to the fixture, and checks that `MsgType`, Kotlin `T`, §5 and the fixtures agree.
 
 ## Format
 

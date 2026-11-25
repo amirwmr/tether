@@ -1,11 +1,11 @@
 #!/bin/zsh
 # Cuts a release: tools/release.sh <version> [--dry-run]   (version like 1.2.0 or 1.2.0-rc.1)
-# Checks a clean tree on main, runs tools/test-all.sh --quick, writes VERSION and the iOS version (ios/project.yml),
+# Checks a clean tree on main, runs tools/test-all.sh --quick, writes VERSION,
 # moves the CHANGELOG's "## Unreleased" entries under "## <version> — <date>", commits "Release <version>" and makes
 # the annotated tag v<version>. It never pushes: it prints the push commands. --dry-run changes nothing and shows
 # what would be written. See docs/RELEASING.md.
 #   tools/release.sh --notes <version>   prints that version's CHANGELOG section (used by the release workflow)
-#   tools/release.sh --code <version>    prints the Android versionCode / iOS build number of a version
+#   tools/release.sh --code <version>    prints the Android versionCode of a version
 set -eu
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 cd "$ROOT"
@@ -41,7 +41,6 @@ case $mode in
 esac
 
 die() { print -u2 "release: $*"; exit 1 }
-marketing=${ver%%-*}
 date=$(date +%Y-%m-%d)
 
 # Checks (in a dry run they only warn).
@@ -61,9 +60,9 @@ changelog=$(awk -v h="## $ver — $date" '
   { print }' CHANGELOG.md)
 
 if (( dry )); then
-  print "dry run: version $ver (versionCode / build $code, iOS MARKETING_VERSION $marketing)"
+  print "dry run: version $ver (versionCode $code)"
   print "would run: tools/test-all.sh --quick"
-  print "would write VERSION = $ver, ios/project.yml and project.pbxproj MARKETING_VERSION \"$marketing\", CURRENT_PROJECT_VERSION \"$code\""
+  print "would write VERSION = $ver"
   print "would write CHANGELOG.md headings:"; print -r -- "$changelog" | grep '^## ' | head -4 | sed 's/^/    /'
   print "would commit \"Release $ver\" as $AUTHOR_NAME and tag v$ver (annotated)"
   print "release notes would be:"; print -r -- "$unreleased" | head -5 | sed 's/^/    /'; print "    …"
@@ -72,13 +71,8 @@ fi
 
 tools/test-all.sh --quick || die "tests failed; nothing changed"
 print $ver > VERSION
-M=$marketing C=$code perl -pi -e 's/^    MARKETING_VERSION: .*/    MARKETING_VERSION: "$ENV{M}"/;
-  s/^    CURRENT_PROJECT_VERSION: .*/    CURRENT_PROJECT_VERSION: "$ENV{C}"/' ios/project.yml
-# The generated project is committed too; keep it in step without needing xcodegen here.
-M=$marketing C=$code perl -pi -e 's/(\bMARKETING_VERSION = )[^;]*;/$1$ENV{M};/; s/(\bCURRENT_PROJECT_VERSION = )[^;]*;/$1$ENV{C};/' \
-  ios/Tether.xcodeproj/project.pbxproj
 print -r -- "$changelog" > CHANGELOG.md
-git add VERSION ios/project.yml ios/Tether.xcodeproj/project.pbxproj CHANGELOG.md
+git add VERSION CHANGELOG.md
 export GIT_COMMITTER_NAME=$AUTHOR_NAME GIT_COMMITTER_EMAIL=$AUTHOR_EMAIL
 git -c user.name="$AUTHOR_NAME" -c user.email="$AUTHOR_EMAIL" commit -q -m "Release $ver"
 git -c user.name="$AUTHOR_NAME" -c user.email="$AUTHOR_EMAIL" tag -a "v$ver" -m "Tether $ver"
