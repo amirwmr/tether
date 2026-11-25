@@ -514,6 +514,9 @@ class MainActivity : Activity() {
             box.addView(sw)
         }
 
+        // Calls: in the Phone app (a calling account per SIM) or in this app's own call screen.
+        box.addView(callsCard())
+
         // This phone
         val me = card()
         me.addView(label(getString(R.string.this_phone).uppercase(), R.color.accent, 12f, bold = true))
@@ -539,6 +542,42 @@ class MainActivity : Activity() {
         val sv = ScrollView(this).apply { addView(box) }
         content.addView(sv)
         sv.post { sv.scrollTo(0, keepScroll) }
+    }
+
+    /**
+     * "Use the Phone app for calls" and what it still needs: the Phone permission (to dial from this app's keypad
+     * through the Phone app) and the calling accounts turned on in the Phone app. Until one is on, calls keep using
+     * this app's call screen, which the card says.
+     */
+    private fun callsCard(): View {
+        val c = card()
+        c.addView(label(getString(R.string.calls_title).uppercase(), R.color.accent, 12f, bold = true))
+        val t = app.telecom
+        c.addView(Switch(this).apply {
+            text = getString(R.string.use_phone_app); textSize = 16f; setTextColor(col(R.color.text)); isChecked = t.usePhoneApp
+            setPadding(0, dp(8), 0, dp(8))
+            setOnCheckedChangeListener { _, v ->
+                t.usePhoneApp = v
+                if (v && !t.hasCallPermission()) requestPermissions(arrayOf(Manifest.permission.CALL_PHONE), 2)
+            }
+        })
+        if (!t.usePhoneApp) {
+            c.addView(label(getString(R.string.phone_app_off), R.color.muted, 13f))
+            return c
+        }
+        val accounts = t.phoneAccounts()
+        val off = accounts.filter { !it.second }
+        when {
+            off.isEmpty() -> c.addView(label(getString(R.string.phone_app_ready), R.color.ok, 13f))
+            off.size == accounts.size -> c.addView(label(getString(R.string.phone_app_turn_on), R.color.warn, 13f))
+            else -> c.addView(label(getString(R.string.phone_app_turn_on_some, off.joinToString { it.first }), R.color.warn, 13f))
+        }
+        if (off.isNotEmpty()) c.addView(button(getString(R.string.phone_app_open_accounts), iconId = R.drawable.ic_call) { t.openCallingAccounts(this) })
+        if (!t.hasCallPermission()) {
+            c.addView(label(getString(R.string.phone_app_permission), R.color.muted, 13f))
+            c.addView(button(getString(R.string.allow_phone_calls), Look.OUTLINED) { requestPermissions(arrayOf(Manifest.permission.CALL_PHONE), 2) })
+        }
+        return c
     }
 
     private fun showLog() {

@@ -77,8 +77,8 @@ jobs:
             } >> android/local.properties
             echo "suffix=" >> "$GITHUB_OUTPUT"
           else
-            echo "::warning::no release key in the repository secrets: the APKs are signed with a throw-away debug key"
-            echo "suffix=-debug-signed" >> "$GITHUB_OUTPUT"
+            echo "::warning::no release key in the repository secrets: the APKs are signed with the shared test key"
+            echo "suffix=-test-signed" >> "$GITHUB_OUTPUT"
           fi
       - name: Unit tests and release builds
         working-directory: android
@@ -132,8 +132,8 @@ jobs:
         run: |
           sudo apt-get install -y zsh >/dev/null
           {
-            if ls dist/*-debug-signed.apk >/dev/null 2>&1; then
-              echo "> **The APKs of this release are signed with a throw-away debug key**, not the project's release"
+            if ls dist/*-test-signed.apk >/dev/null 2>&1; then
+              echo "> **The APKs of this release are signed with the shared test key**, not the project's release"
               echo "> key (the repository has no signing secrets). Use them for testing; a later release-signed APK needs"
               echo "> an uninstall first."
               echo

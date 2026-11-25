@@ -29,6 +29,12 @@ and call history. The SIM phone stays in a bag; you use the other phone.
   a dial hung up before the phone reported it is ended as soon as it shows up, a dial the phone never reports fails
   after 30 s, mirrored answers and holds done on the SIM phone, `elsewhere` ends the local call ("answered
   elsewhere") with a **Move here** banner (`call.take`), and local calls end when the link goes.
+- **Calls in the Phone app** (Link › Calls, "Use the Phone app for calls", on by default): the SIM phone's SIMs become
+  calling accounts of this phone (`CAPABILITY_CALL_PROVIDER`, one per SIM on a dual-SIM phone, served by
+  `TetherPhoneConnectionService`). The Phone app rings, shows the call, dials out from its keypad, contacts and history,
+  and logs the calls. The user turns the accounts on once in the Phone app's calling accounts. Until then, or with the
+  switch off, calls use the self-managed account and this app's call screen (`TelecomBridge.accountFor`). Only the
+  local Telecom side changes: the messages on the link are the same.
 - **Call audio** both ways: `AudioRecord` (VOICE_COMMUNICATION, with the platform's echo canceller, noise suppressor
   and gain control) → Opus (Concentus, the codec code shared with the SIM phone) → link; link → Opus → the playout
   buffer ported from TetherCore (same numbers, same tests) → `AudioTrack` (voice communication). A local ringback

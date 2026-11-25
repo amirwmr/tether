@@ -4,7 +4,7 @@ sdk.dir=/path/to/Android/sdk
 # Optional: a mirror of Google's Maven repository, if dl.google.com is not reachable from your network.
 # tether.googleMavenMirror=https://example.com/maven/google
 
-# Optional: sign release builds with your own key (otherwise the debug key in ~/.android is used).
+# Optional: sign release builds with your own key (otherwise the shared test key android/test-signing.keystore is used).
 # tether.signing.storeFile=/path/to/release.jks
 # tether.signing.storePassword=...
 # tether.signing.keyAlias=tether

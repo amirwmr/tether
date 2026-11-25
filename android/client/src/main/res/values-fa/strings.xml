@@ -149,4 +149,14 @@
     <string name="report_copied">کپی شد</string>
     <string name="report_share">اشتراک‌گذاری</string>
     <string name="action_close">بستن</string>
+    <string name="calls_title">تماس‌ها</string>
+    <string name="use_phone_app">استفاده از برنامهٔ تلفن برای تماس‌ها</string>
+    <string name="phone_app_off">تماس‌ها در صفحهٔ تماس خود این برنامه زنگ می‌خورند و انجام می‌شوند.</string>
+    <string name="phone_app_ready">تماس‌ها در برنامهٔ تلفن این گوشی زنگ می‌خورند، با صفحهٔ تماس، صفحه‌کلید، مخاطبین و تاریخچهٔ تماس آن.</string>
+    <string name="phone_app_turn_on">یک قدم مانده: Tether را در «حساب‌های تماس» برنامهٔ تلفن روشن کنید. تا آن موقع تماس‌ها از صفحهٔ تماس خود این برنامه استفاده می‌کنند.</string>
+    <string name="phone_app_turn_on_some">هنوز در «حساب‌های تماس» برنامهٔ تلفن روشن نشده: %1$s. تماس‌های آن از صفحهٔ تماس خود این برنامه استفاده می‌کنند.</string>
+    <string name="phone_app_open_accounts">باز کردن حساب‌های تماس</string>
+    <string name="phone_app_permission">برای تماس از صفحه‌کلید این برنامه از طریق برنامهٔ تلفن، اجازهٔ «تماس‌های تلفنی» را بدهید.</string>
+    <string name="phone_account_description">تماس از طریق گوشی اندرویدی سیم‌کارت‌دار شما</string>
+    <string name="allow_phone_calls">اجازهٔ تماس‌های تلفنی</string>
 </resources>
