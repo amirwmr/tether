@@ -97,14 +97,19 @@ iPhone. The iPhone's voice is injected into the call's uplink by the Android pho
   (Android 13+; the phone's own microphone and earpiece leave the call), then the phone maker's own microphone switch
   (Samsung, MediaTek), and otherwise leaves the microphone on. It never uses Android's general microphone mute on its
   own: on several phones that also mutes your voice. Each step is checked during the call: when the downlink goes
-  silent, or your speech stops reaching the uplink, Tether undoes it and remembers that for the phone model. Some
+  silent, or your speech stops reaching the uplink, Tether undoes it and remembers that for the phone model (switching
+  to another setting and back keeps that; choosing **Off during calls** again while it is chosen, or the self-test,
+  tries the redirect modes anew). Some
   phones cannot show their uplink to this check: a redirect mode is then not used at all (not even for the rest of that
   call, and no other untested mode is tried after it), and the maker's switch is
   kept only where it is known to keep your voice (Samsung's, verified on real calls); otherwise the microphone stays
   on rather than risk a silent call.
 - **The Android phone's microphone mute** (only with **Muted**). On several phones (MediaTek for certain, Qualcomm
-  audio systems) muting the phone's microphone also mutes the injected voice. Tether checks during each call, turns the
-  mute off when your voice does not get through and remembers it.
+  audio systems) muting the phone's microphone also mutes the injected voice. Where the phone maker has its own
+  microphone switch Tether uses that; on Qualcomm phones without one (Xiaomi, Redmi, Poco, OnePlus, Samsung with a
+  Qualcomm chip and others) Android's microphone mute is never used, since the uplink check could not see that it
+  silences your voice: the microphone stays on and the Android app says so under **Muted**. Elsewhere Tether checks
+  during each call, turns the mute off when your voice does not get through and remembers it.
 - **The iPhone sends silence**: Tether may not use the iPhone's microphone (Settings › Privacy & Security ›
   Microphone), or the call is muted on the iPhone. Tether asks for the microphone once it is paired; if that was
   refused, the call screen says so in yellow, the Link tab in red (**Your voice in the call** then reads "Does not

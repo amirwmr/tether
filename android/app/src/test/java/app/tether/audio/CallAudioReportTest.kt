@@ -33,6 +33,12 @@ class CallAudioReportTest {
         assertTrue(line, line.contains("errors: local mute x"))
     }
 
+    @Test fun aMuteSettingThePhoneCannotHonourIsSaid() {
+        val info = JSONObject().put("capture", "intercept").put("inject", "intercept").put("errors", JSONArray()).put("uplink", uplink("off", false))
+        val line = CallAudioReport.pathLine(info, setting = true, memory = Memory.OK, canMute = false)
+        assertTrue(line, line.contains("Android's mic mute also silences the injected voice"))
+    }
+
     @Test fun anInjectionNotRoutedToTheCallIsSaid() {
         // Issue #15: telephony_tx granted on the phone's speaker instead of Telephony Tx.
         val info = JSONObject().put("capture", "intercept").put("inject", "intercept").put("routed", "2:Speaker").put("routedToCall", false)

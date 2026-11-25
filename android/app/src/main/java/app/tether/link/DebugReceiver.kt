@@ -251,8 +251,8 @@ class DebugReceiver : BroadcastReceiver() {
             app.hub.pushStatus()
             "micMute=${app.hub.audio.micSetting} remembered=${app.hub.audio.memory()?.wire ?: "none"} helper=${app.hub.audio.helperStatus()} uplink=${app.hub.helper.lastUplink}"
         }
-        // mic auto|mute|open|state [keep]: "this phone's microphone during bridged calls" (a new choice forgets what was
-        // remembered, unless `keep`).
+        // mic auto|mute|open|state [keep]: "this phone's microphone during bridged calls" (as the app's picker: a new choice
+        // forgets the mute's result, the same choice again also the redirect modes'; `keep` forgets nothing).
         "mic" -> {
             val keep = intent.getStringExtra("keep") != null
             intent.getStringExtra("on")?.let { w -> MicPath.Setting.entries.firstOrNull { it.wire == w } }?.let { app.hub.audio.setMic(it, forget = !keep) }

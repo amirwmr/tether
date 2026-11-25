@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- Android phone, Qualcomm without a maker's microphone switch (Xiaomi, Redmi, Poco, OnePlus, Samsung with a Qualcomm
+  chip and others): **Muted** no longer uses Android's microphone mute. Its audio system mutes the whole uplink with
+  it, the iPhone's voice included, while the in-call check still heard that voice and remembered the mute as safe: the
+  other side heard nothing (Redmi Note 8; perhaps also #14 on a Poco X3 Pro). The phone's microphone stays on there,
+  the Android app says so in orange under **Muted**, the link log and problem report give the reason, and the
+  self-test no longer tests that mute. The iPhone's Link tab already shows **In this call: Microphone on**.
+- Android phone: switching between **Off during calls**, **Muted** and **On** keeps what this phone showed of the
+  redirect modes. Before, every switch forgot it, so the next calls tried a mode known to fail again, each with a few
+  seconds of silence and a late uplink for the rest of that call. Choosing **Off during calls** again while it is
+  chosen, or the self-test, still tries them anew.
+
 ## 1.2.4 — 2026-11-25
 
 - Coming from 1.1.0: uninstall the 1.1.0 Android app first (1.2 APKs are signed with the project's release key), then
