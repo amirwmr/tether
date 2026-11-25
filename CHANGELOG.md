@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Android phone, Qualcomm phones whose audio configuration has no `afe-proxy-playback` mixer path (seen on a Redmi
+  Note 8 with a custom Android 16): the iPhone's voice is now sent into the call through the in-call music route
+  (`telephony_tx`). The interception API's uplink went nowhere there (the HAL logged "unable to find path
+  'afe-proxy-playback afe-proxy'"), so the other side heard only what the Android phone's own microphone picked up,
+  and only when it lay close. The self-test and the in-call check read the same proxy and reported the voice as
+  reaching the call. Tether reads the vendor's mixer configuration once, never injects through the interception API
+  there (not even when an earlier self-test chose it), and says why in the link log.
 - Android phone, Qualcomm without a maker's microphone switch (Xiaomi, Redmi, Poco, OnePlus, Samsung with a Qualcomm
   chip and others): **Muted** no longer uses Android's microphone mute. Its audio system mutes the whole uplink with
   it, the iPhone's voice included, while the in-call check still heard that voice and remembered the mute as safe: the

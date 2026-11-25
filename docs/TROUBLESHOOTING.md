@@ -104,6 +104,13 @@ iPhone. The iPhone's voice is injected into the call's uplink by the Android pho
   call, and no other untested mode is tried after it), and the maker's switch is
   kept only where it is known to keep your voice (Samsung's, verified on real calls); otherwise the microphone stays
   on rather than risk a silent call.
+- **A route into the call that the phone's audio configuration does not wire up.** On some Qualcomm phones (seen
+  on a Redmi Note 8 with a custom Android 16) the interception API's uplink plays into a mixer path that does not
+  exist, so the other side hears only the Android phone's own microphone (you are heard only when it lies close).
+  Tether detects this from the vendor's mixer configuration and sends your voice through the in-call music route
+  instead; the `call audio path:` line then says `via telephony_tx (… not via intercept: this phone's audio
+  configuration has no afe-proxy-playback path …)`. The self-test cannot see this case: put the Android phone in
+  another room and check that the other side still hears you.
 - **The Android phone's microphone mute** (only with **Muted**). On several phones (MediaTek for certain, Qualcomm
   audio systems) muting the phone's microphone also mutes the injected voice. Where the phone maker has its own
   microphone switch Tether uses that; on Qualcomm phones without one (Xiaomi, Redmi, Poco, OnePlus, Samsung with a

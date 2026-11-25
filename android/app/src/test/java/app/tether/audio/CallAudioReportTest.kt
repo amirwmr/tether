@@ -33,6 +33,14 @@ class CallAudioReportTest {
         assertTrue(line, line.contains("errors: local mute x"))
     }
 
+    @Test fun aSkippedInterceptionRouteIsSaid() {
+        val info = JSONObject().put("capture", "intercept").put("inject", "telephony_tx").put("routed", "18:Redmi Note 8")
+            .put("routedToCall", true).put("interceptInjectDead", true).put("errors", JSONArray()).put("uplink", uplink("off", false))
+        val line = CallAudioReport.pathLine(info, setting = false, memory = null)
+        assertTrue(line, line.contains("uplink injection open via telephony_tx"))
+        assertTrue(line, line.contains("no afe-proxy-playback path"))
+    }
+
     @Test fun aMuteSettingThePhoneCannotHonourIsSaid() {
         val info = JSONObject().put("capture", "intercept").put("inject", "intercept").put("errors", JSONArray()).put("uplink", uplink("off", false))
         val line = CallAudioReport.pathLine(info, setting = true, memory = Memory.OK, canMute = false)

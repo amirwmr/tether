@@ -73,10 +73,22 @@ object CallAudio {
         else -> emptyList()
     }
     val injectMethods: List<String> get() = when {
-        Build.VERSION.SDK_INT >= FULL_SDK_AUDIO -> listOf("intercept", "telephony_tx", "policy_mix")
+        Build.VERSION.SDK_INT >= FULL_SDK_AUDIO -> UplinkRoutes.injectOrder(listOf("intercept", "telephony_tx", "policy_mix"), interceptInjectDead)
         Build.VERSION.SDK_INT >= MIN_SDK_AUDIO -> listOf("telephony_tx")
         else -> emptyList()
     }
+
+    /**
+     * The interception API's uplink track goes nowhere on this phone (Qualcomm, no `afe-proxy-playback` mixer path:
+     * [UplinkRoutes]), so it is never used to inject; read once from the vendor's mixer configuration.
+     */
+    val interceptInjectDead: Boolean by lazy {
+        (silence == Silence.QUALCOMM || silence == Silence.SAMSUNG_QUALCOMM) && UplinkRoutes.afeProxyMissing(readMixerPaths())
+    }
+
+    private fun readMixerPaths(): List<String> = listOf("/vendor/etc", "/vendor/etc/audio", "/odm/etc", "/odm/etc/audio")
+        .flatMap { d -> java.io.File(d).listFiles { f -> f.name.startsWith("mixer_paths") && f.name.endsWith(".xml") }?.toList().orEmpty() }
+        .mapNotNull { f -> runCatching { f.readText() }.getOrNull() }
 
     private val am get() = ShellEnv.audioManager
 

@@ -82,7 +82,9 @@ screen and the Link tab say when it is refused or silent) and that the call is n
 own microphone out of the call automatically and checks that your voice still gets through; if it does not, try
 Call audio › "This phone's microphone during bridged calls" › **On**, and run the self-test during a call. On Qualcomm
 phones (Xiaomi, Redmi, Poco, OnePlus and others) **Muted** keeps the microphone on in versions after 1.2.4: muting it there also
-silenced your voice. Full list: [TROUBLESHOOTING.md](TROUBLESHOOTING.md#the-other-side-cannot-hear-me).
+silenced your voice. If the other side hears you only while the Android phone is close to you, the iPhone's voice is
+not reaching the call and what they hear is the Android phone's own microphone: put it in another room, call
+again, and include the link log in your report. Full list: [TROUBLESHOOTING.md](TROUBLESHOOTING.md#the-other-side-cannot-hear-me).
 
 ### How far apart can the phones be?
 

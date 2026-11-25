@@ -23,6 +23,8 @@ object CallAudioReport {
                 if (info.has("routedToCall") && !info.isNull("routedToCall") && !info.optBoolean("routedToCall"))
                     append(": NOT the call's uplink, the other side may not hear the iPhone")
                 append(')')
+                if (info.optBoolean("interceptInjectDead"))
+                    append(" (not via intercept: this phone's audio configuration has no afe-proxy-playback path, the interception API's uplink would go nowhere)")
             } else append(", uplink injection NOT open: the other side cannot hear the iPhone")
             if (inject != null && injectErrors.isNotEmpty()) append(" after ").append(injectErrors.joinToString("; "))
             if (inject == null && injectErrors.isNotEmpty()) append(" (").append(injectErrors.joinToString("; ")).append(')')

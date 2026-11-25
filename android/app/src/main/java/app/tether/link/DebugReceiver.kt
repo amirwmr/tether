@@ -245,6 +245,13 @@ class DebugReceiver : BroadcastReceiver() {
             app.prefs.edit().apply { if (v == null) remove("inject_ms") else putInt("inject_ms", v.coerceIn(20, 200)) }.apply()
             "inject_ms=${app.prefs.getInt("inject_ms", 40)}"
         }
+        // inject auto|intercept|telephony_tx|policy_mix: the uplink injection method for the next calls (the self-test's choice).
+        "inject" -> {
+            val m = intent.getStringExtra("m")
+            if (m == "auto") app.prefs.edit().remove("inject").apply()
+            else if (m in setOf("intercept", "telephony_tx", "policy_mix")) app.prefs.edit().putString("inject", m).apply()
+            "inject=${app.prefs.getString("inject", "auto")}"
+        }
         // mic_mute on|off|state: "mute this phone's mic during bridged calls" (on/off also forget the remembered check result).
         "mic_mute" -> {
             when (intent.getStringExtra("on")) { "on" -> app.hub.audio.setMicSetting(true); "off" -> app.hub.audio.setMicSetting(false) }
