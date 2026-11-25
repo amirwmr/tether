@@ -14,28 +14,33 @@ struct LinkView: View {
         NavigationStack {
             ScrollViewReader { scroller in
             List {
-                Section {
-                    HStack(spacing: 14) {
-                        Image(systemName: model.linkState.isConnected ? "antenna.radiowaves.left.and.right" : "antenna.radiowaves.left.and.right.slash")
-                            .font(.system(size: 34))
-                            .foregroundStyle(model.linkState.isConnected ? .teal : .secondary)
-                            .frame(width: 48)
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(model.isPaired ? model.peerName : String(localized: "Not paired")).font(.headline)
-                            Text(stateLine).font(.subheadline).foregroundStyle(.secondary)
+                if !model.isPaired {
+                    SetupGuideSection(
+                        status: stateLine,
+                        linkState: model.linkState
+                    ) { scanning = true }
+                } else {
+                    Section {
+                        HStack(spacing: 14) {
+                            Image(systemName: model.linkState.isConnected ? "antenna.radiowaves.left.and.right" : "antenna.radiowaves.left.and.right.slash")
+                                .font(.system(size: 34))
+                                .foregroundStyle(model.linkState.isConnected ? .teal : .secondary)
+                                .frame(width: 48)
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(model.peerName).font(.headline)
+                                Text(stateLine).font(.subheadline).foregroundStyle(.secondary)
+                            }
                         }
+                        .padding(.vertical, 6)
                     }
-                    .padding(.vertical, 6)
-                }
 
-                if !model.isPaired { SetupGuideSection { scanning = true } }
-
-                Section {
-                    Label {
-                        Text("Clark keeps the link in the background and when the screen is locked. Swiping Clark away in the app switcher stops it until you open it again: iOS does not relaunch a force-quit app for Bluetooth.")
-                            .font(.footnote)
-                    } icon: {
-                        Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.yellow)
+                    Section {
+                        Label {
+                            Text("Clark keeps the link in the background and when the screen is locked. Swiping Clark away in the app switcher stops it until you open it again: iOS does not relaunch a force-quit app for Bluetooth.")
+                                .font(.footnote)
+                        } icon: {
+                            Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.yellow)
+                        }
                     }
                 }
 
@@ -196,12 +201,10 @@ struct LinkView: View {
                     }
                     Button("Sync everything again") { model.requestSync(full: true) }.disabled(!model.linkState.isConnected)
                     NavigationLink("Link log") { LinkLogView() }
-                    Button(model.isPaired ? "Pair again" : "Pair with Android phone") { scanning = true }
                     if model.isPaired {
+                        Button("Pair again") { scanning = true }
                         Button("Unpair", role: .destructive) { confirmUnpair = true }
                     }
-                } footer: {
-                    Text("On the Android phone, open Clark and tap Pair iPhone, then scan the code with the Camera or here (or paste it). Calls, messages, contacts and call history stay between your devices; there is no server.")
                 }
                 #if DEBUG
                 DeveloperSection()
@@ -252,37 +255,110 @@ struct LinkView: View {
     }
 }
 
-/// The Android phone's VPN (any VPN app) and "Share VPN": its proxy lets this device use that VPN.
-#if DEBUG
-/// Debug builds only: try the extensions (protocol §7) against the linked Android phone. Not translated on purpose.
-/// First run (not paired): what to install on the Android phone, how to show and scan the code, and which
-/// permissions the iPhone will ask for and why.
-struct SetupGuideSection: View {
+private struct SetupGuideSection: View {
+    let status: String
+    let linkState: TetherLink.State
     let scan: () -> Void
+
+    private let accent = Color(red: 0.55, green: 0.78, blue: 1)
+    private let navy = Color(red: 0.06, green: 0.12, blue: 0.23)
+
+    private var bluetoothUnavailable: Bool { linkState == .poweredOff || linkState == .unauthorized }
 
     var body: some View {
         Section {
-            step(1, "Install Clark on the Android phone that holds your SIMs and do its Setup steps (permissions, default phone app, battery, wireless debugging).")
-            step(2, "On the Android phone, open Clark and tap Pair iPhone. A QR code appears for 5 minutes.")
-            step(3, "Point this iPhone's Camera at the code and tap Open in Clark, or tap the button below and scan it here.")
-            step(4, "Allow what the iPhone asks: Bluetooth (the link to the phone), Microphone (your voice in calls) and Notifications (calls and new texts).")
-            Button { scan() } label: { Label("Scan Pairing Code", systemImage: "qrcode.viewfinder") }
+            VStack(alignment: .leading, spacing: 14) {
+                Image(systemName: "personalhotspot")
+                    .font(.title2.weight(.semibold))
+                    .imageScale(.large)
+                    .foregroundStyle(accent)
+                    .padding(12)
+                    .background(accent.opacity(0.12), in: RoundedRectangle(cornerRadius: 14))
+                    .accessibilityHidden(true)
+
+                Text("Connect your Android phone")
+                    .font(.title2.bold())
+                    .accessibilityAddTraits(.isHeader)
+
+                Text("Use your Android SIM for calls and texts on this device.")
+                    .font(.subheadline)
+                    .foregroundStyle(.white.opacity(0.84))
+
+                Label(status, systemImage: bluetoothUnavailable ? "exclamationmark.circle.fill" : "link")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(bluetoothUnavailable ? Color.orange : accent)
+
+                if linkState == .poweredOff {
+                    Text("Turn on Bluetooth in Settings on this device before pairing.")
+                        .font(.footnote)
+                        .foregroundStyle(.white.opacity(0.84))
+                }
+
+                Button(action: scan) {
+                    Label("Scan Pairing Code", systemImage: "qrcode.viewfinder")
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(navy)
+                        .multilineTextAlignment(.center)
+                        .padding(.vertical, 6)
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(accent)
+
+                if linkState == .unauthorized, let settingsURL = URL(string: UIApplication.openSettingsURLString) {
+                    Link("Open Settings", destination: settingsURL)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(accent)
+                }
+            }
+            .foregroundStyle(.white)
+            .padding(20)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                LinearGradient(colors: [navy, Color(red: 0.10, green: 0.24, blue: 0.41)],
+                               startPoint: .topLeading, endPoint: .bottomTrailing),
+                in: RoundedRectangle(cornerRadius: 22)
+            )
+            .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+            .listRowBackground(Color.clear)
+        }
+
+        Section {
+            step(1, title: "Set up Clark on Android",
+                 detail: "On the phone with the SIM, install Clark and complete its setup.")
+            step(2, title: "Show the pairing code",
+                 detail: "In Clark on Android, tap Pair iPhone. The QR code is available for five minutes.")
+            step(3, title: "Scan with this device",
+                 detail: "Keep both phones nearby. You can also enter the code manually from the scanner.")
         } header: {
             Text("Set up")
         } footer: {
-            Text("Keep both phones close while pairing. Nothing goes through a server.")
+            Label("Calls and texts stay on your devices and travel over an encrypted Bluetooth link.",
+                  systemImage: "lock.shield")
         }
     }
 
-    private func step(_ n: Int, _ text: LocalizedStringKey) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 10) {
-            Text(n.formatted()).font(.subheadline.weight(.bold)).foregroundStyle(.teal).frame(minWidth: 18)
-            Text(text).font(.subheadline)
+    private func step(_ number: Int, title: LocalizedStringKey, detail: LocalizedStringKey) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Text(number.formatted())
+                .font(.subheadline.weight(.semibold).monospacedDigit())
+                .foregroundStyle(accent)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(accent.opacity(0.12), in: Capsule())
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title).font(.subheadline.weight(.semibold))
+                Text(detail).font(.subheadline).foregroundStyle(.secondary)
+            }
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, 4)
+        .accessibilityElement(children: .combine)
     }
 }
 
+#if DEBUG
+/// Try protocol extensions against the linked Android phone.
 struct DeveloperSection: View {
     @Environment(\.appModel) private var model
     var body: some View { WithPerceptionTracking { bodyContent } }
@@ -302,6 +378,7 @@ struct DeveloperSection: View {
 }
 #endif
 
+/// The Android phone's VPN and the proxy used to share it with this device.
 struct VPNSection: View {
     @Environment(\.appModel) private var model
 

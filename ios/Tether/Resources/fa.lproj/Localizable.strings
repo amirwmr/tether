@@ -179,7 +179,6 @@
 "Airplane mode" = "حالت هواپیما";
 "Network · %@" = "شبکه · %@";
 "Turn on the hotspot and join it in Settings › Wi-Fi to use the Android phone's internet here. Bluetooth tethering is slower: after switching it on, tap the Android phone in Settings › Bluetooth. Airplane mode keeps Bluetooth on so this link stays up; if the link is not back within 90 seconds it switches itself off. The hotspot and Bluetooth tethering come back on after it." = "برای استفاده از اینترنت گوشی اندروید، هات‌اسپات را روشن کنید و در تنظیمات › Wi-Fi به آن وصل شوید. اشتراک بلوتوث کندتر است: پس از روشن کردن، در تنظیمات › بلوتوث روی گوشی اندروید بزنید. حالت هواپیما بلوتوث را روشن نگه می‌دارد تا این اتصال برقرار بماند؛ اگر اتصال تا ۹۰ ثانیه برنگردد، خودش خاموش می‌شود. هات‌اسپات و اشتراک بلوتوث پس از آن دوباره روشن می‌شوند.";
-"On the Android phone, open Clark and tap Pair iPhone, then scan the code with the Camera or here (or paste it). Calls, messages, contacts and call history stay between your devices; there is no server." = "روی گوشی اندروید، کلارک را باز کنید و «جفت کردن آیفون» را بزنید، سپس کد را با دوربین یا همین‌جا اسکن کنید (یا بچسبانید). تماس‌ها، پیام‌ها، مخاطبان و تاریخچهٔ تماس فقط بین دستگاه‌های شما می‌ماند؛ سروری در کار نیست.";
 "A free Apple account's signature lasts 7 days. Renew it by running tools/reinstall-ios.sh on your Mac with this device unlocked and connected." = "امضای حساب رایگان اپل ۷ روز اعتبار دارد. برای تمدید، tools/reinstall-ios.sh را روی مک اجرا کنید، در حالی که این دستگاه قفل نیست و وصل است.";
 "Move here" = "انتقال به اینجا";
 "On %@" = "روی %@";
@@ -251,12 +250,17 @@
 
 /* First run and pairing links */
 "Set up" = "راه‌اندازی";
-"Install Clark on the Android phone that holds your SIMs and do its Setup steps (permissions, default phone app, battery, wireless debugging)." = "کلارک را روی گوشی اندرویدی که سیم‌کارت‌هایتان در آن است نصب کنید و مراحل راه‌اندازی آن را انجام دهید (مجوزها، برنامهٔ پیش‌فرض تلفن، باتری، اشکال‌زدایی بی‌سیم).";
-"On the Android phone, open Clark and tap Pair iPhone. A QR code appears for 5 minutes." = "روی گوشی اندروید کلارک را باز کنید و «جفت کردن آیفون» را بزنید. یک کد QR به مدت ۵ دقیقه نمایش داده می‌شود.";
-"Point this iPhone's Camera at the code and tap Open in Clark, or tap the button below and scan it here." = "دوربین این آیفون را به سمت کد بگیرید و «باز کردن در کلارک» را بزنید، یا دکمهٔ پایین را بزنید و همین‌جا اسکن کنید.";
-"Allow what the iPhone asks: Bluetooth (the link to the phone), Microphone (your voice in calls) and Notifications (calls and new texts)." = "آنچه آیفون می‌پرسد را مجاز کنید: بلوتوث (اتصال به گوشی)، میکروفون (صدای شما در تماس) و اعلان‌ها (تماس‌ها و پیامک‌های تازه).";
+"Connect your Android phone" = "گوشی اندرویدی‌تان را وصل کنید";
+"Use your Android SIM for calls and texts on this device." = "با سیم‌کارت گوشی اندرویدی، از همین دستگاه تماس بگیرید و پیامک بفرستید.";
+"Set up Clark on Android" = "راه‌اندازی کلارک در اندروید";
+"On the phone with the SIM, install Clark and complete its setup." = "کلارک را روی گوشی سیم‌کارت‌دار نصب کنید و مراحل راه‌اندازی را انجام دهید.";
+"Show the pairing code" = "نمایش کد جفت‌سازی";
+"In Clark on Android, tap Pair iPhone. The QR code is available for five minutes." = "در کلارکِ گوشی اندرویدی، «جفت کردن آیفون» را بزنید. کد QR تا پنج دقیقه معتبر است.";
+"Scan with this device" = "اسکن با همین دستگاه";
+"Keep both phones nearby. You can also enter the code manually from the scanner." = "دو گوشی را نزدیک هم نگه دارید. در صفحهٔ اسکن می‌توانید کد را دستی هم وارد کنید.";
+"Turn on Bluetooth in Settings on this device before pairing." = "پیش از جفت‌سازی، بلوتوث را در تنظیمات این دستگاه روشن کنید.";
 "Scan Pairing Code" = "اسکن کد جفت‌سازی";
-"Keep both phones close while pairing. Nothing goes through a server." = "هنگام جفت کردن دو گوشی را نزدیک هم نگه دارید. هیچ چیزی از سرور نمی‌گذرد.";
+"Calls and texts stay on your devices and travel over an encrypted Bluetooth link." = "تماس‌ها و پیامک‌ها در دستگاه‌های شما می‌مانند و از طریق بلوتوث رمزنگاری‌شده منتقل می‌شوند.";
 "Pair with %@?" = "با %@ جفت شود؟";
 "the Android phone" = "گوشی اندروید";
 "This replaces the current pairing and removes the synced data from this iPhone." = "این کار جفت‌سازی فعلی را جایگزین می‌کند و داده‌های همگام‌شده را از این آیفون پاک می‌کند.";
