@@ -39,8 +39,8 @@ All files are on the [latest release](https://github.com/amirwmr/tether/releases
 
 From 1.2.0 the APKs are signed with the project's release key (certificate SHA-256
 `16f456947ccc85880d9fe3cd24775b884d2f21d0f39c4f10d3b3d6e64901057f`; check with
-`apksigner verify --print-certs`). The 1.1.0 APKs and APKs named `…-debug-signed.apk` were signed with a temporary
-key: to move from one of those to 1.2.0, uninstall the old app first (your pairing is then made again).
+`apksigner verify --print-certs`). The 1.1.0 APKs and APKs named `…-debug-signed.apk` or `…-test-signed.apk` were signed with a
+test key: to move from one of those to 1.2.0, uninstall the old app first (your pairing is then made again).
 
 ## 3. Install the Android app (the phone with the SIMs)
 

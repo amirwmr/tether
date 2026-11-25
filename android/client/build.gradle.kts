@@ -5,7 +5,7 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
-// Optional release key from local.properties (git-ignored); without one, release builds use the debug key.
+// Optional release key from local.properties (git-ignored); without one, release builds use the shared test key.
 val localProps = Properties().apply {
     rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
 }
@@ -35,6 +35,15 @@ android {
     }
 
     signingConfigs {
+        // Builds without the release key (CI, pull requests, any computer) are signed with one shared test key
+        // (android/test-signing.keystore, public on purpose), not each machine's own random debug key, so every
+        // test build installs over the previous one. Release builds with the key below are unaffected.
+        getByName("debug") {
+            storeFile = rootProject.file("test-signing.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
         localProps.getProperty("tether.signing.storeFile")?.let { store ->
             create("own") {
                 storeFile = file(store)

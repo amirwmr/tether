@@ -33,18 +33,18 @@ gh secret set TETHER_KEY_PASSWORD
 
 For local release builds with the same key, put the same four values in `android/local.properties` (git-ignored):
 `tether.signing.storeFile`, `tether.signing.storePassword`, `tether.signing.keyAlias`, `tether.signing.keyPassword`.
-Both apps read them. Without them, release builds are signed with your machine's Android debug key.
+Both apps read them. Without them, release builds are signed with the shared test key `android/test-signing.keystore`.
 
-Without the secrets the workflow still builds, but names the APKs `*-debug-signed.apk` (signed with the runner's
-throw-away debug key) and says so at the top of the release notes.
+Without the secrets the workflow still builds, but names the APKs `*-test-signed.apk` (signed with the
+shared test key) and says so at the top of the release notes.
 
 ### Switching an installed app to a new key
 
 An app signed with one key cannot be updated with an APK signed with another: Android refuses the install. To move to
 release-signed builds, uninstall the app first (`adb uninstall app.tether.android`). That deletes its data, **including
 the pairing**: pair the iPhone again afterwards, as on first setup ([SETUP.md](SETUP.md)). Builds made
-from source without a release key are signed with that machine's debug key, so the same applies when switching between
-your own builds and release APKs.
+from source without a release key (and CI's test builds) are signed with the shared test key, so the same applies when
+switching between those and release APKs; test builds install over each other.
 
 ## 2. Cut a release
 
@@ -75,8 +75,9 @@ match), runs the Android unit tests, builds the Swift package, and attaches to t
 | `altstore.json` | AltStore / SideStore source for the IPA, made and checked by `tools/altstore-source.py` from the IPA's own Info.plist. Its stable address is `https://github.com/amirwmr/tether/releases/latest/download/altstore.json` (GitHub's "latest" points at the newest non-prerelease, so prereleases never reach users of the source) |
 | `SHA256SUMS` | checksums of the files above |
 
-The release notes are that version's CHANGELOG section plus install instructions. On every push to `main`, CI also keeps
-debug-signed APKs of both apps as a workflow artifact (`tether-apks-debug-signed`, 30 days) for testers.
+The release notes are that version's CHANGELOG section plus install instructions. On every CI run (pull requests too), CI also keeps
+test-signed APKs of both apps as a workflow artifact (`tether-apks-test-signed`, 30 days) for testers; they share one
+key (`android/test-signing.keystore`), so each installs over the previous one.
 
 ## 4. Verifying a download
 

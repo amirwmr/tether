@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Test builds (CI artifacts, and builds without the release key on any computer) are all signed with one shared test
+  key, `android/test-signing.keystore`, so each installs over the previous one. Before, every CI run and every computer
+  signed with its own random debug key and Android refused the update. Coming from such a build, uninstall once.
+
 - Android client: **calls in the Phone app**. A new switch, Link › Calls › "Use the Phone app for calls" (on by
   default), makes the Android phone's SIMs calling accounts of this phone, one per SIM ("Tether · Work"). Calls then
   ring in the Phone app with its call screen and ringtone, can be dialed from its keypad, contacts and call history,

@@ -40,7 +40,8 @@ jobs:
         with:
           name: android-test-reports
           path: android/*/build/reports/
-      # A build for testers on every run (pull requests too): debug-signed (CI has no release key), kept 30 days.
+      # A build for testers on every run (pull requests too), signed with the shared test key so each installs over the
+      # previous one (android/test-signing.keystore), kept 30 days.
       # Download it from the run's Summary page, "Artifacts".
       - name: Name the APKs
         env:
@@ -48,12 +49,12 @@ jobs:
         run: |
           v=$(tr -d '[:space:]' < VERSION)-${HEAD_SHA::7}
           mkdir -p dist
-          cp android/app/build/outputs/apk/release/app-release.apk "dist/Tether-A54-$v-debug-signed.apk"
-          cp android/client/build/outputs/apk/release/client-release.apk "dist/Tether-Client-$v-debug-signed.apk"
+          cp android/app/build/outputs/apk/release/app-release.apk "dist/Tether-A54-$v-test-signed.apk"
+          cp android/client/build/outputs/apk/release/client-release.apk "dist/Tether-Client-$v-test-signed.apk"
       - name: APKs for testers
         uses: actions/upload-artifact@v7
         with:
-          name: tether-apks-debug-signed
+          name: tether-apks-test-signed
           path: dist/*.apk
           retention-days: 30
           if-no-files-found: error

@@ -36,8 +36,9 @@ adb shell cmd package compile -m speed -f app.tether.android   # optional: compi
 ```
 
 - `JAVA_HOME` must point at a JDK 17 (for Homebrew: `export JAVA_HOME=$(brew --prefix openjdk@17)/libexec/openjdk.jdk/Contents/Home`).
-- The release build is signed with your local debug key unless you set `tether.signing.*` in `local.properties`.
-  Keep using the same key: Android refuses to update an app signed with a different one.
+- Without `tether.signing.*` in `local.properties`, every build is signed with the shared test key
+  `android/test-signing.keystore` (public on purpose), the same on CI and on every computer, so each test build
+  installs over the previous one. Android refuses to update an app signed with a different key.
 - Prebuilt, signed APKs (and an unsigned iPhone IPA) are attached to each GitHub Release; the version comes from
   `VERSION` at the repository root. Release keys and cutting a release: [RELEASING.md](RELEASING.md).
 - If `dl.google.com` is not reachable from your network, set `tether.googleMavenMirror=<url>` in
