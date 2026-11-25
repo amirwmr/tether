@@ -79,7 +79,7 @@ jobs:
   # so CI asks for one per push instead of two.
   apple:
     name: Apple (Swift SDK, docs, examples, iPhone app)
-    runs-on: macos-15
+    runs-on: macos-15-intel
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v7
