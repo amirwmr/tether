@@ -87,6 +87,11 @@
             android:windowSoftInputMode="adjustResize" />
 
         <activity
+            android:name=".ui.UssdActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
             android:name=".ui.CallActivity"
             android:exported="false"
             android:excludeFromRecents="true"

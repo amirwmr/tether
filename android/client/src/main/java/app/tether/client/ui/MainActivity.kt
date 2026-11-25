@@ -33,6 +33,7 @@ import app.tether.client.R
 import app.tether.client.link.BleCentral
 import app.tether.client.link.LinkService
 import app.tether.client.model.Search
+import app.tether.client.model.UssdCodes
 import app.tether.client.model.dialable
 import app.tether.core.CallEntry
 import app.tether.core.Contact
@@ -312,6 +313,7 @@ class MainActivity : Activity() {
     private lateinit var keypadBack: View
     private lateinit var keypadCalls: LinearLayout
     private lateinit var keypadAdd: View
+    private lateinit var keypadUssd: View
 
     /** The keypad is built once while it is shown; a key press or a state change only updates its texts and buttons. */
     private fun keypad() {
@@ -343,9 +345,18 @@ class MainActivity : Activity() {
         box.addView(grid, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(8) })
         keypadCalls = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; isBaselineAligned = false; gravity = Gravity.CENTER }
         box.addView(keypadCalls, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
+        // Under the call buttons: carrier codes (USSD) on the Android phone's SIM, and adding the number to contacts.
+        keypadUssd = button(getString(R.string.ussd_button), Look.TONAL, iconId = R.drawable.ic_dialpad) { openUssd(number.toString(), null) }
         keypadAdd = button(getString(R.string.add_contact), Look.TEXT, iconId = R.drawable.ic_person_add) { editContact(null, number.toString()) }
+        box.addView(keypadUssd, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(8) })
         box.addView(keypadAdd, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(4) })
         return ScrollView(this).apply { addView(box) }
+    }
+
+    /** The carrier-code screen, with [code] typed in (sent at once when it is a code) on SIM [sub]. */
+    private fun openUssd(code: String, sub: Int?) {
+        startActivity(Intent(this, UssdActivity::class.java).putExtra(UssdActivity.EXTRA_CODE, code).apply { sub?.let { putExtra(UssdActivity.EXTRA_SUB, it) } }
+            .putExtra(UssdActivity.EXTRA_SEND, UssdCodes.valid(code)))
     }
 
     private fun updateKeypad() {
@@ -354,7 +365,10 @@ class MainActivity : Activity() {
         val name = app.state.name(n)
         keypadWho.text = name ?: ""
         keypadBack.visibility = if (n.isEmpty()) View.INVISIBLE else View.VISIBLE
-        keypadAdd.visibility = if (n.isNotEmpty() && name == null) View.VISIBLE else View.INVISIBLE
+        val code = UssdCodes.valid(n)
+        keypadAdd.visibility = if (n.isNotEmpty() && name == null && !code) View.VISIBLE else View.INVISIBLE
+        // Shown when the Android phone runs carrier codes (its builds with the phone tools say so in their status).
+        keypadUssd.visibility = if (app.state.canUssd) View.VISIBLE else View.GONE
         // One green call button, or one per SIM labelled with its name.
         keypadCalls.removeAllViews()
         val sims = app.state.sims
@@ -362,6 +376,8 @@ class MainActivity : Activity() {
             else listOf(getString(R.string.call) to app.state.defaultSub)
         for ((label, sub) in targets) keypadCalls.addView(roundAction(R.drawable.ic_call, label, R.color.ok) {
             if (number.isEmpty()) return@roundAction
+            // A carrier code (*123#) on a call button: sent as USSD on that SIM, like a phone's own dialer does.
+            if (UssdCodes.valid(number.toString()) && app.state.canUssd) { openUssd(number.toString(), sub); number.clear(); updateKeypad(); return@roundAction }
             app.dial(number.toString(), sub); number.clear(); updateKeypad()
         }.apply { getChildAt(0).isEnabled = n.isNotEmpty() }, LinearLayout.LayoutParams(dp(112), -2))
     }

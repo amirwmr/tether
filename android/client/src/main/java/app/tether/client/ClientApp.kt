@@ -26,6 +26,8 @@ import app.tether.client.model.Effects
 import app.tether.client.model.LinkPort
 import app.tether.client.model.Problem
 import app.tether.client.ui.CallActivity
+import app.tether.client.ui.UssdActivity
+import app.tether.client.model.UssdCodes
 import app.tether.core.AudioFrame
 import app.tether.core.CallEntry
 import app.tether.core.Message
@@ -158,8 +160,19 @@ class ClientApp : Application(), LinkEvents {
     /** Keeps the link service in the foreground; during a call also as a phone-call / microphone service. */
     fun service(callMode: Boolean) = LinkService.callMode(this, callMode)
 
+    /** The carrier-code screen with [code], sent at once (a code dialed in the Phone app or a tel: link). */
+    fun openUssd(code: String, sub: Int?) {
+        runCatching {
+            startActivity(Intent(this, UssdActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                .putExtra(UssdActivity.EXTRA_CODE, code).putExtra(UssdActivity.EXTRA_SEND, true)
+                .apply { sub?.let { putExtra(UssdActivity.EXTRA_SUB, it) } })
+        }
+    }
+
     /** Dials from this phone through Telecom (onCreateOutgoingConnection asks the Android phone). */
     fun dial(number: String, sub: Int?) {
+        // A carrier code (*123#): runs as USSD, not as a call.
+        if (UssdCodes.valid(number)) { openUssd(number, sub); return }
         val n = app.tether.client.model.dialable(number)
         if (n.isEmpty()) return
         if (!link.isConnected) { problem(Problem.NOT_CONNECTED); return }

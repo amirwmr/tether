@@ -50,6 +50,10 @@ and call history. The SIM phone stays in a bag; you use the other phone.
 - **Keypad** with DTMF during calls; **Recents** (search, delete, clear, missed-call badge); **Contacts** with
   Favourites (search, add, edit, star, block); **Messages** (conversations, send from either SIM, outbox while out of
   reach, "Not delivered" for a text whose answer was lost, read state both ways, delete, mute, block).
+- **USSD codes** (Keypad › USSD codes, or a code such as *123# sent with a call button): choose the SIM, run the code on
+  the SIM phone (`ussd.send` / `ussd.result`), answer a menu (open on the SIM phone: `ussd.reply` / `ussd.cancel`;
+  else a new code that carries the choice, *123# then 2 sends *123*2#), and send recent codes again
+  (`ui/UssdActivity.kt`, `model/Ussd.kt`). A code dialed in the Phone app with Tether's account opens this screen.
 - **Notifications** for texts (with reply and mark-read) and missed calls.
 - **Link screen**: the SIM phone's battery and signal per SIM, the connected devices, the switches (mobile data,
   data SIM, hotspot, Bluetooth tethering, airplane mode, network mode per SIM, Share VPN), the audio self-test, the

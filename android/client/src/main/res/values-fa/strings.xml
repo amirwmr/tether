@@ -165,4 +165,16 @@
     <string name="open_phone_app_screen">صفحهٔ تماس برنامهٔ تلفن</string>
     <string name="call_not_in_phone_app">این تماس در صفحهٔ خود Tether است: هیچ حساب تماس Tether در برنامهٔ تلفن روشن نیست.</string>
     <string name="call_on_other_device">تماس روی دستگاه دیگر</string>
+    <string name="ussd_button">کدهای USSD</string>
+    <string name="ussd_title">کدهای اپراتور (USSD)</string>
+    <string name="ussd_note">کدی مثل *123# را روی سیم‌کارت گوشی اندرویدی اجرا می‌کند و پاسخ اپراتور را نشان می‌دهد. برای هر کد یک پاسخ: برای پاسخ به یک منو، گزینه را بنویسید تا Tether کد تازه‌ای با آن بفرستد (*123# و بعد 2 یعنی *123*2#)؛ بیشتر اپراتورها آن را می‌پذیرند.</string>
+    <string name="ussd_hint">کد، مثل *123#</string>
+    <string name="ussd_send">ارسال</string>
+    <string name="ussd_waiting">در انتظار پاسخ اپراتور به %1$s…</string>
+    <string name="ussd_reply_hint">گزینهٔ شما</string>
+    <string name="ussd_reply">پاسخ</string>
+    <string name="ussd_reply_sends">ارسال %1$s</string>
+    <string name="ussd_recent">کدهای اخیر</string>
+    <string name="ussd_invalid">این کد اپراتور نیست (مثل *123#)</string>
+    <string name="ussd_failed">کد اجرا نشد</string>
 </resources>

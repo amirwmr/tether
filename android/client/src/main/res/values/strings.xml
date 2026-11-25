@@ -166,4 +166,16 @@
     <string name="open_phone_app_screen">Phone app call screen</string>
     <string name="call_not_in_phone_app">This call is in Tether\'s own screen: no Tether calling account is turned on in the Phone app.</string>
     <string name="call_on_other_device">Call on another device</string>
+    <string name="ussd_button">USSD codes</string>
+    <string name="ussd_title">Carrier codes (USSD)</string>
+    <string name="ussd_note">Runs a code like *123# on the Android phone\'s SIM and shows the carrier\'s answer. One answer per code: to answer a menu, type your choice and Tether sends a new code that carries it (*123# then 2 sends *123*2#), which most carriers accept.</string>
+    <string name="ussd_hint">Code, like *123#</string>
+    <string name="ussd_send">Send</string>
+    <string name="ussd_waiting">Waiting for the carrier\'s answer to %1$s…</string>
+    <string name="ussd_reply_hint">Your choice</string>
+    <string name="ussd_reply">Reply</string>
+    <string name="ussd_reply_sends">Sends %1$s</string>
+    <string name="ussd_recent">Recent codes</string>
+    <string name="ussd_invalid">Not a carrier code (like *123#)</string>
+    <string name="ussd_failed">The code did not go through</string>
 </resources>

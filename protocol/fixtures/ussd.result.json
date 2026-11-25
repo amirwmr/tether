@@ -9,6 +9,11 @@
     "old": {
       "ok": false,
       "err": "Not a carrier code (like *123#)"
+    },
+    "menu": {
+      "ok": true,
+      "text": "1. Balance\n2. Packages",
+      "session": true
     }
   }
 }
