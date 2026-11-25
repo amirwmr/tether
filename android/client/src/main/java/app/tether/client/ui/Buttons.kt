@@ -157,7 +157,9 @@ fun View.pressableCard(fill: Int, radiusDp: Float = 10f, onClick: () -> Unit) {
 }
 
 /**
- * A keypad key: the digit, its letters underneath, a round ripple on the dark grey surface and a key-press haptic.
+ * A keypad key: the digit, its letters underneath (an empty line for keys without letters, so the digits line up; no
+ * line at all when [letters] is null, as on the call screen's pad), a round ripple on the dark grey surface and a
+ * key-press haptic.
  * [onLong] (optional) takes a long press, e.g. 0 → "+".
  */
 fun Context.dialKey(digit: String, letters: String?, sizeDp: Int = 76, onLong: (() -> Unit)? = null, onClick: () -> Unit) = ButtonFrame(this).apply {
@@ -165,7 +167,12 @@ fun Context.dialKey(digit: String, letters: String?, sizeDp: Int = 76, onLong: (
     addView(LinearLayout(context).apply {
         orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
         addView(label(digit, size = sizeDp / 2.8f).apply { gravity = Gravity.CENTER; setPadding(0, 0, 0, 0) })
-        if (!letters.isNullOrEmpty()) addView(label(letters, R.color.muted, 10f).apply { gravity = Gravity.CENTER; setPadding(0, 0, 0, 0); letterSpacing = 0.1f })
+        // The letters' line is kept (empty, invisible) on keys without letters (1, *, #) when the pad has letters at
+        // all ([letters] not null), so every digit sits at the same height, as on a phone's own dialer.
+        if (letters != null) addView(label(letters.ifEmpty { " " }, R.color.muted, 10f).apply {
+            gravity = Gravity.CENTER; setPadding(0, 0, 0, 0); letterSpacing = 0.1f
+            if (letters.isEmpty()) visibility = View.INVISIBLE
+        })
         importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
     }, FrameLayout.LayoutParams(-2, -2, Gravity.CENTER))
     contentDescription = if (letters.isNullOrEmpty()) digit else "$digit, $letters"

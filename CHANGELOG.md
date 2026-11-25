@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Android client: the keypad's digits line up. Keys without letters (1, *, #) keep an empty letters line, so their
+  digits sit at the same height as the others, as on a phone's own dialer.
+
 - SIM phone: **USSD codes as the phone's own dialer runs them.** Some carriers refuse codes sent through Android's
   background USSD API ("The carrier refused the code") but answer a dialed code. Where Tether's Wireless debugging is
   paired, the SIM phone now:
