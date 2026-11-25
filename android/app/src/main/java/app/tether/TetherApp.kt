@@ -34,7 +34,13 @@ class TetherApp : Application() {
         hub = Hub(this)
         val nm = getSystemService(NotificationManager::class.java)
         nm.createNotificationChannel(NotificationChannel(CH_LINK, getString(R.string.channel_link), NotificationManager.IMPORTANCE_LOW))
-        nm.createNotificationChannel(NotificationChannel(CH_CALLS, getString(R.string.channel_calls), NotificationManager.IMPORTANCE_HIGH))
+        // The incoming call's pop-up, silent: Telecom plays the ringtone (IN_CALL_SERVICE_RINGING false), and the
+        // channel's default notification sound played just before it. A channel's sound cannot change once it exists,
+        // so this is a new channel and the old one ("calls") goes.
+        nm.deleteNotificationChannel("calls")
+        nm.createNotificationChannel(NotificationChannel(CH_CALLS, getString(R.string.channel_calls), NotificationManager.IMPORTANCE_HIGH).apply {
+            setSound(null, null); enableVibration(false)
+        })
         // The same call notification once Tether's call screen is up: in the notification bar only, no pop-up over the
         // call screen (which kept the screen awake). Telecom plays the ringtone itself (IN_CALL_SERVICE_RINGING false).
         nm.createNotificationChannel(NotificationChannel(CH_CALLS_QUIET, getString(R.string.channel_calls_quiet), NotificationManager.IMPORTANCE_LOW))
@@ -71,7 +77,7 @@ class TetherApp : Application() {
 
     companion object {
         const val CH_LINK = "link"
-        const val CH_CALLS = "calls"
+        const val CH_CALLS = "calls_silent"
         const val CH_CALLS_QUIET = "calls_quiet"
         const val CH_SETUP = "setup"
         const val CH_FIND = "find"

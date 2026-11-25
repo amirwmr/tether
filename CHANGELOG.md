@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- SIM phone: no notification sound before the ringtone. The incoming-call notification's channel played the default
+  notification sound just before Android's ringtone. It is now a silent channel; the ringtone and its vibration are
+  Android's, unchanged.
+
 - Android client: a call on another device (the SIM phone took it, or it was answered there) now stays in the
   notification bar, "Call on another device" with a **Move here** button. A tap on it opens Tether. Before, the way
   back was only the banner inside the app. It is quiet (no sound, no pop-up) and goes away when the call ends or comes
