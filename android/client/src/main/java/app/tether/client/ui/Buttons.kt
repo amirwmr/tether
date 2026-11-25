@@ -136,7 +136,7 @@ fun Context.roundAction(iconId: Int, text: String, colorId: Int = R.color.accent
         orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL
         addView(circle, LinearLayout.LayoutParams(dp(sizeDp), dp(sizeDp)))
         addView(label(text, R.color.muted, 13f).apply {
-            gravity = Gravity.CENTER; maxLines = 2; ellipsize = TextUtils.TruncateAt.END
+            gravity = Gravity.CENTER; textAlignment = View.TEXT_ALIGNMENT_CENTER; maxLines = 2; ellipsize = TextUtils.TruncateAt.END
             importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO   // the circle says it already
         }, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(6) })
     }
@@ -157,15 +157,22 @@ fun View.pressableCard(fill: Int, radiusDp: Float = 10f, onClick: () -> Unit) {
 }
 
 /**
- * A keypad key: the digit, its letters underneath, a round ripple on the dark grey surface and a key-press haptic.
+ * A keypad key: the digit, its letters underneath (an empty line for keys without letters, so the digits line up; no
+ * line at all when [letters] is null, as on the call screen's pad), a round ripple on the dark grey surface and a
+ * key-press haptic.
  * [onLong] (optional) takes a long press, e.g. 0 → "+".
  */
 fun Context.dialKey(digit: String, letters: String?, sizeDp: Int = 76, onLong: (() -> Unit)? = null, onClick: () -> Unit) = ButtonFrame(this).apply {
     background = pressable(col(R.color.surface), R.color.text, oval = true)
     addView(LinearLayout(context).apply {
         orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
-        addView(label(digit, size = sizeDp / 2.8f).apply { gravity = Gravity.CENTER; setPadding(0, 0, 0, 0) })
-        if (!letters.isNullOrEmpty()) addView(label(letters, R.color.muted, 10f).apply { gravity = Gravity.CENTER; setPadding(0, 0, 0, 0); letterSpacing = 0.1f })
+        addView(label(digit, size = sizeDp / 2.8f).apply { gravity = Gravity.CENTER; textAlignment = View.TEXT_ALIGNMENT_CENTER; setPadding(0, 0, 0, 0) })
+        // The letters' line is kept (empty, invisible) on keys without letters (1, *, #) when the pad has letters at
+        // all ([letters] not null), so every digit sits at the same height, as on a phone's own dialer.
+        if (letters != null) addView(label(letters.ifEmpty { " " }, R.color.muted, 10f).apply {
+            gravity = Gravity.CENTER; textAlignment = View.TEXT_ALIGNMENT_CENTER; setPadding(0, 0, 0, 0); letterSpacing = 0.1f
+            if (letters.isEmpty()) visibility = View.INVISIBLE
+        })
         importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
     }, FrameLayout.LayoutParams(-2, -2, Gravity.CENTER))
     contentDescription = if (letters.isNullOrEmpty()) digit else "$digit, $letters"
@@ -192,12 +199,12 @@ class TabView(ctx: Context, iconId: Int, private val name: String, onClick: () -
         background = RippleDrawable(ctx.rippleColor(R.color.text), null, null)
         pill.addView(iconView, FrameLayout.LayoutParams(ctx.dp(24), ctx.dp(24), Gravity.CENTER))
         badge.apply {
-            gravity = Gravity.CENTER; setPadding(ctx.dp(4), 0, ctx.dp(4), 0); minWidth = ctx.dp(16)
+            gravity = Gravity.CENTER; textAlignment = View.TEXT_ALIGNMENT_CENTER; setPadding(ctx.dp(4), 0, ctx.dp(4), 0); minWidth = ctx.dp(16)
             background = GradientDrawable().apply { cornerRadius = ctx.dp(8).toFloat(); setColor(ctx.col(R.color.bad)) }
         }
         pill.addView(badge, FrameLayout.LayoutParams(-2, ctx.dp(16), Gravity.TOP or Gravity.END).apply { topMargin = ctx.dp(0); marginEnd = ctx.dp(10) })
         addView(pill, LayoutParams(ctx.dp(56), ctx.dp(30)))
-        text.apply { gravity = Gravity.CENTER; maxLines = 1; ellipsize = TextUtils.TruncateAt.END }
+        text.apply { gravity = Gravity.CENTER; textAlignment = View.TEXT_ALIGNMENT_CENTER; maxLines = 1; ellipsize = TextUtils.TruncateAt.END }
         addView(text, LayoutParams(-2, -2).apply { topMargin = ctx.dp(2) })
         isClickable = true; isFocusable = true
         setOnClickListener { onClick() }

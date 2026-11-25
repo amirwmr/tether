@@ -48,6 +48,11 @@ fun Activity.fitSystemBars(root: View) {
 fun Context.dp(v: Int) = (v * resources.displayMetrics.density).toInt()
 fun Context.col(id: Int) = getColor(id)
 
+/**
+ * A text in the app's style. It is aligned to the start of the view's own direction (right in Persian, also for a
+ * Latin name), which overrides `gravity`: a centred label also sets `textAlignment = TEXT_ALIGNMENT_CENTER`, else it
+ * is drawn at the start of its box (keypad digits sat left of their letters).
+ */
 fun Context.label(t: CharSequence, colorId: Int = R.color.text, size: Float = 15f, bold: Boolean = false) = TextView(this).apply {
     text = t; textSize = size; setTextColor(col(colorId)); setPadding(0, dp(2), 0, dp(2))
     textAlignment = View.TEXT_ALIGNMENT_VIEW_START

@@ -81,8 +81,8 @@ class CallActivity : Activity() {
         seenCall = true
         local = c.local
         root.removeAllViews()
-        root.addView(label(c.name ?: app.format(c.number), size = 30f, bold = true).apply { gravity = Gravity.CENTER })
-        if (c.name != null) root.addView(label(app.format(c.number), R.color.muted, 16f).apply { gravity = Gravity.CENTER })
+        root.addView(label(c.name ?: app.format(c.number), size = 30f, bold = true).apply { gravity = Gravity.CENTER; textAlignment = View.TEXT_ALIGNMENT_CENTER })
+        if (c.name != null) root.addView(label(app.format(c.number), R.color.muted, 16f).apply { gravity = Gravity.CENTER; textAlignment = View.TEXT_ALIGNMENT_CENTER })
         val sim = app.state.simName(c.sub)
         val stateText = when (c.state) {
             "ringing" -> getString(R.string.incoming_call)
@@ -90,12 +90,12 @@ class CallActivity : Activity() {
             "holding" -> getString(R.string.call_on_hold)
             else -> c.connectedAt?.let { val s = ((System.currentTimeMillis() - it) / 1000).coerceAtLeast(0); "%d:%02d".format(s / 60, s % 60) } ?: getString(R.string.call_active)
         }
-        root.addView(label(listOfNotNull(stateText, sim).joinToString(" · "), R.color.muted, 16f).apply { gravity = Gravity.CENTER; setPadding(0, dp(8), 0, dp(32)) })
-        app.micWarning?.let { root.addView(label(getString(micText(it)), R.color.warn, 14f).apply { gravity = Gravity.CENTER; setPadding(0, 0, 0, dp(16)) }) }
+        root.addView(label(listOfNotNull(stateText, sim).joinToString(" · "), R.color.muted, 16f).apply { gravity = Gravity.CENTER; textAlignment = View.TEXT_ALIGNMENT_CENTER; setPadding(0, dp(8), 0, dp(32)) })
+        app.micWarning?.let { root.addView(label(getString(micText(it)), R.color.warn, 14f).apply { gravity = Gravity.CENTER; textAlignment = View.TEXT_ALIGNMENT_CENTER; setPadding(0, 0, 0, dp(16)) }) }
         val others = app.calls.calls.filter { it.local != c.local }
         // Another call (waiting or on hold): tap to show it here.
         for (o in others) root.addView(label("${o.name ?: app.format(o.number)} · ${getString(if (o.state == "holding") R.string.call_on_hold else R.string.call_waiting)}", R.color.warn, 14f).apply {
-            gravity = Gravity.CENTER; setPadding(dp(16), dp(12), dp(16), dp(12)); minHeight = dp(48)
+            gravity = Gravity.CENTER; textAlignment = View.TEXT_ALIGNMENT_CENTER; setPadding(dp(16), dp(12), dp(16), dp(12)); minHeight = dp(48)
             pressableCard(R.color.surface, 24f) { local = o.local; render() }
         }, LinearLayout.LayoutParams(-2, -2).apply { bottomMargin = dp(8) })
         phoneAppRow(c.local)
@@ -155,7 +155,7 @@ class CallActivity : Activity() {
                 if (t.moveToPhoneApp(local)) main.postDelayed({ t.showPhoneAppCallScreen(); finish() }, 800)
             })
             t.usePhoneApp -> {
-                root.addView(label(getString(R.string.call_not_in_phone_app), R.color.muted, 13f).apply { gravity = Gravity.CENTER })
+                root.addView(label(getString(R.string.call_not_in_phone_app), R.color.muted, 13f).apply { gravity = Gravity.CENTER; textAlignment = View.TEXT_ALIGNMENT_CENTER })
                 root.addView(button(getString(R.string.phone_app_open_accounts), Look.TEXT) { t.openCallingAccounts(this) })
             }
         }
