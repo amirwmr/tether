@@ -859,6 +859,7 @@ struct ManualPairingView: View {
                         .accessibilityLabel(Text("Pairing code"))
                         .environment(\.layoutDirection, .leftToRight)
                         .lineLimit(1...4)
+                        .keyboardType(.asciiCapable)
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.never)
                         .font(.body.monospaced())
@@ -866,8 +867,15 @@ struct ManualPairingView: View {
                         .submitLabel(.done)
                         .onSubmit(use)
 
-                    PasteButton(payloadType: String.self) { items in
-                        if let code = items.first { typed = code.trimmingCharacters(in: .whitespacesAndNewlines) }
+                    HStack {
+                        Text("Paste pairing code")
+                            .accessibilityHidden(true)
+                        Spacer()
+                        PasteButton(payloadType: String.self) { items in
+                            if let code = items.first { typed = code.trimmingCharacters(in: .whitespacesAndNewlines) }
+                        }
+                        .labelStyle(.iconOnly)
+                        .accessibilityLabel(Text("Paste pairing code"))
                     }
                 } footer: {
                     if let error {
