@@ -87,10 +87,15 @@ jobs:
       - run: sudo apt-get install -y zsh >/dev/null && zsh -n tools/device-test.sh && zsh -n tools/test-all.sh && zsh -n tools/release.sh
       - run: python3 tools/check-docs-links.py
       - run: zsh tools/check-private.sh --all
-      # The theme and identity guardrails (CONTRIBUTING.md, "Design rules"); on a pull request also what it may not touch.
+      # The theme and identity guardrails (CONTRIBUTING.md, "Design rules"); on a pull request from outside the
+      # project also what it may not touch. Pull requests by the owner, members and collaborators may change the
+      # protected files (workflows, palette, ids, the checks): that rule is for contributions from outside.
       - name: Guardrails
+        env:
+          AUTHOR_ASSOCIATION: ${{ github.event.pull_request.author_association }}
         run: |
-          if [ "${{ github.event_name }}" = pull_request ]; then
+          case "$AUTHOR_ASSOCIATION" in OWNER|MEMBER|COLLABORATOR) maintainer=1 ;; *) maintainer=0 ;; esac
+          if [ "${{ github.event_name }}" = pull_request ] && [ $maintainer = 0 ]; then
             git fetch --no-tags --depth=200 origin "${{ github.base_ref }}"
             git fetch --no-tags --deepen=200 origin HEAD 2>/dev/null || true
             python3 tools/check-guardrails.py --base "origin/${{ github.base_ref }}"

@@ -108,7 +108,8 @@ Both apps share one look; a change that leaves it is not merged.
 
 `tools/check-guardrails.py` checks this in CI: raw colours in code (Kotlin
 `Color.parseColor`, hex values outside `colors.xml`) and colours off the palette fail the build, and on a pull
-request so does any change to the palette, icons, app names, ids, signing, workflows or the checks themselves. A line
+request from outside the project (not the owner, a member or a collaborator) so does any change to the palette,
+icons, app names, ids, signing, workflows or the checks themselves. A line
 that truly needs a fixed colour says why: `// theme: ok <reason>`.
 
 ## Testing on devices without real calls
