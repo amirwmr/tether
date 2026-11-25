@@ -84,7 +84,9 @@ Call audio › "This phone's microphone during bridged calls" › **On**, and ru
 phones (Xiaomi, Redmi, Poco, OnePlus and others) **Muted** keeps the microphone on in versions after 1.2.4: muting it there also
 silenced your voice. If the other side hears you only while the Android phone is close to you, the iPhone's voice is
 not reaching the call and what they hear is the Android phone's own microphone: put it in another room, call
-again, and include the link log in your report. Full list: [TROUBLESHOOTING.md](TROUBLESHOOTING.md#the-other-side-cannot-hear-me).
+again, and include the link log in your report. If calls dialed on the iPhone end at once and incoming calls are
+silent both ways, iOS restarted its call service under Tether: with versions up to 1.2.4, swipe Tether away in the
+app switcher and open it again (newer versions recover by themselves). Full list: [TROUBLESHOOTING.md](TROUBLESHOOTING.md#the-other-side-cannot-hear-me).
 
 ### How far apart can the phones be?
 

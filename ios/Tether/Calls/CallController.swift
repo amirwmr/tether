@@ -31,8 +31,11 @@ struct CallScreen: Equatable {
 @MainActor
 final class CallController: NSObject {
     private unowned let model: AppModel
-    private let provider: CXProvider
-    private let controller = CXCallController()
+    /// Rebuilt when CallKit no longer knows it ([rebuildCallKit]): iOS may restart its call daemon under a running app.
+    private var provider: CXProvider
+    private var controller = CXCallController()
+    /// CallKit lost our provider while a call was up: set it up again once no call is left.
+    private var callKitRebuildPending = false
     /// Calls whose audio is on another client, by Android phone call id (shown as "On … · Move here").
     private(set) var remote: [String: CallInfo] = [:]
 
@@ -61,6 +64,21 @@ final class CallController: NSObject {
 
     init(model: AppModel) {
         self.model = model
+        provider = CXProvider(configuration: Self.providerConfiguration())
+        super.init()
+        provider.setDelegate(self, queue: nil)
+        // An audio-system reset may take CallKit's daemon with it: check that it still knows us.
+        NotificationCenter.default.addObserver(forName: AVAudioSession.mediaServicesWereResetNotification, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolatedCompat { self?.rebuildCallKit("media services were reset") }
+        }
+        // The speaker button follows the real route (CallKit's own speaker button, AirPods, a cable…).
+        NotificationCenter.default.addObserver(forName: AVAudioSession.routeChangeNotification, object: nil, queue: .main) { [weak self] n in
+            let reason = (n.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt).flatMap(AVAudioSession.RouteChangeReason.init(rawValue:))
+            MainActor.assumeIsolatedCompat { self?.routeChanged(reason: reason) }
+        }
+    }
+
+    private static func providerConfiguration() -> CXProviderConfiguration {
         let config = CXProviderConfiguration()
         config.supportsVideo = false
         config.maximumCallGroups = 2
@@ -73,13 +91,40 @@ final class CallController: NSObject {
         if let icon = UIImage(named: "CallKitIcon")?.pngData() { config.iconTemplateImageData = icon }
         // Note: CallKit labels the call "<CFBundleDisplayName> Audio". Since iOS 14 there is no API to change or
         // hide that line (CXProviderConfiguration.localizedName is unsupported), so the display name is kept neutral.
-        provider = CXProvider(configuration: config)
-        super.init()
+        return config
+    }
+
+    /// The request failed because CallKit does not know our provider (its daemon restarted under this app).
+    nonisolated static func lostProvider(_ error: Error) -> Bool {
+        let e = error as NSError
+        return e.domain == CXErrorDomainRequestTransaction && e.code == CXErrorCodeRequestTransactionError.Code.unknownCallProvider.rawValue
+    }
+
+    /// Sets the CallKit provider and controller up again. iOS can restart its call daemon (callservicesd) while this
+    /// app keeps running; the old provider is then unknown to it: every request fails with "unknown call provider" and
+    /// an incoming call is shown but its audio session is never activated (no microphone, no sound), until the app is
+    /// force-quit (2026-11-25, iPhone 17 Pro). Done only with no call up; otherwise once the last call is gone.
+    func rebuildCallKit(_ why: String) {
+        guard uuids.isEmpty, pendingOutgoing == nil, info.isEmpty else {
+            callKitRebuildPending = true
+            LinkJournal.shared.add("CallKit: \(why); set up again after this call")
+            return
+        }
+        callKitRebuildPending = false
+        provider.invalidate()
+        provider = CXProvider(configuration: Self.providerConfiguration())
         provider.setDelegate(self, queue: nil)
-        // The speaker button follows the real route (CallKit's own speaker button, AirPods, a cable…).
-        NotificationCenter.default.addObserver(forName: AVAudioSession.routeChangeNotification, object: nil, queue: .main) { [weak self] n in
-            let reason = (n.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt).flatMap(AVAudioSession.RouteChangeReason.init(rawValue:))
-            MainActor.assumeIsolatedCompat { self?.routeChanged(reason: reason) }
+        controller = CXCallController()
+        audioSessionActive = false
+        LinkJournal.shared.add("CallKit: \(why); provider set up again")
+    }
+
+    /// When the app comes to the front with no call: an empty request tells whether CallKit still knows our provider.
+    func checkCallKit() {
+        guard uuids.isEmpty, pendingOutgoing == nil else { return }
+        controller.request(CXTransaction(actions: [])) { error in
+            guard let error, Self.lostProvider(error) else { return }
+            Task { @MainActor in self.rebuildCallKit("CallKit no longer knew this app's provider") }
         }
     }
 
@@ -209,11 +254,10 @@ final class CallController: NSObject {
     /// Runs a call action as a CallKit transaction.
     private func run(_ action: CXCallAction, mirrored: Bool = false) {
         if mirrored { self.mirrored.insert(action.callUUID) }
-        controller.request(CXTransaction(action: action)) { error in
-            guard let error else { return }
+        request(action) { error in
             NSLog("[calls] %@ failed: %@", "\(type(of: action))", "\(error)")
             // A refused mirrored action must not make the user's next action look mirrored (and not be sent).
-            if mirrored { Task { @MainActor in self.mirrored.remove(action.callUUID) } }
+            if mirrored { self.mirrored.remove(action.callUUID) }
         }
     }
 
@@ -371,7 +415,10 @@ final class CallController: NSObject {
     }
 
     private func cleanup(_ uuid: UUID, flash: Bool = true) {
-        defer { updateUplink() }
+        defer {
+            updateUplink()
+            if callKitRebuildPending { rebuildCallKit("after the call") }
+        }
         answeredHere.remove(uuid); reportedConnecting.remove(uuid); reportedConnected.remove(uuid); mirrored.remove(uuid)
         startPerformed.remove(uuid)
         // Close the call screen at once (another call takes it over if there is one).
@@ -489,10 +536,23 @@ final class CallController: NSObject {
         model.callScreenDismissed = false
         let action = CXStartCallAction(call: uuid, handle: CXHandle(type: .phoneNumber, value: clean))
         action.contactIdentifier = model.name(for: clean)
+        request(action) { error in
+            NSLog("[calls] start failed: %@", "\(error)")
+            self.model.callScreen = nil; self.model.lastError = String(localized: "Call failed")
+        }
+    }
+
+    /// Runs [action] as a CallKit transaction; when CallKit no longer knows our provider, sets it up again and tries
+    /// once more (the action's copy: a transaction takes an action only once). [failed] runs on the main actor.
+    private func request(_ action: CXCallAction, retried: Bool = false, failed: @escaping @MainActor (Error) -> Void) {
         controller.request(CXTransaction(action: action)) { error in
-            if let error {
-                NSLog("[calls] start failed: %@", "\(error)")
-                Task { @MainActor in self.model.callScreen = nil; self.model.lastError = String(localized: "Call failed") }
+            guard let error else { return }
+            Task { @MainActor in
+                if !retried, Self.lostProvider(error), let again = action.copy() as? CXCallAction {
+                    self.rebuildCallKit("CallKit no longer knew this app's provider (\(type(of: action)))")
+                    if !self.callKitRebuildPending { self.request(again, retried: true, failed: failed); return }
+                }
+                failed(error)
             }
         }
     }

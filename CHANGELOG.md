@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- iPhone: Tether sets its CallKit provider up again when iOS restarted its call service under the running app. Until
+  now every call then failed until the app was force-quit: calls dialed on the iPhone ended at once ("unknown call
+  provider") and incoming calls rang but CallKit never activated their audio (no microphone, no sound). Tether checks
+  this whenever it comes to the front, after an audio-system reset and on a refused request, then tries once more;
+  the link log says `CallKit: … provider set up again`. The Android client uses Android's Telecom and is not
+  affected.
 - Android phone, Qualcomm phones whose audio configuration has no `afe-proxy-playback` mixer path (seen on a Redmi
   Note 8 with a custom Android 16): the iPhone's voice is now sent into the call through the in-call music route
   (`telephony_tx`). The interception API's uplink went nowhere there (the HAL logged "unable to find path

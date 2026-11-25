@@ -117,6 +117,10 @@ iPhone. The iPhone's voice is injected into the call's uplink by the Android pho
   Qualcomm chip and others) Android's microphone mute is never used, since the uplink check could not see that it
   silences your voice: the microphone stays on and the Android app says so under **Muted**. Elsewhere Tether checks
   during each call, turns the mute off when your voice does not get through and remembers it.
+- **The iPhone app lost its CallKit registration** (before the version after 1.2.4): calls dialed on the iPhone
+  end at once and incoming calls ring but stay silent both ways until Tether is force-quit. iOS had restarted its
+  call service under the running app. Newer versions set CallKit up again by themselves (`CallKit: … provider set
+  up again` in the iPhone's link log); with an older one, swipe Tether away in the app switcher and open it again.
 - **The iPhone sends silence**: Tether may not use the iPhone's microphone (Settings › Privacy & Security ›
   Microphone), or the call is muted on the iPhone. Tether asks for the microphone once it is paired; if that was
   refused, the call screen says so in yellow, the Link tab in red (**Your voice in the call** then reads "Does not
