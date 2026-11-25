@@ -102,7 +102,23 @@ class UssdDialer(private val app: TetherApp) {
     fun available(): Boolean = runCatching { Adb.get(app).ensureConnected() }.getOrDefault(false)
 
     private fun sh(cmd: String): String = app.adbShell(cmd)
-    private fun dump(): String = runCatching { sh("uiautomator dump $tmp >/dev/null 2>&1; cat $tmp; rm -f $tmp") }.getOrDefault("")
+    /**
+     * The screen as uiautomator sees it, woken first (same shell command, no extra round trip): a locked phone's screen
+     * goes off while the carrier's menu waits for the client's reply, and an off screen shows no dialog to read.
+     */
+    private fun dump(): String =
+        runCatching { sh("input keyevent KEYCODE_WAKEUP; uiautomator dump $tmp >/dev/null 2>&1; cat $tmp; rm -f $tmp") }.getOrDefault("")
+
+    /** [dump] until [ok] holds (the screen may still be waking and drawing the dialog again): at most [tries] reads. */
+    private fun dumpUntil(tries: Int = 8, ok: (String) -> Boolean): String {
+        var xml = ""
+        repeat(tries) { i ->
+            xml = dump()
+            if (ok(xml)) return xml
+            if (i < tries - 1) Thread.sleep(400)
+        }
+        return xml
+    }
     private fun tap(p: Pair<Int, Int>) { sh("input tap ${p.first} ${p.second}") }
 
     /** `{ok, text?, err?, session?}` like [Ussd.send]; `session` true: a menu waits for [reply]. */
@@ -111,7 +127,6 @@ class UssdDialer(private val app: TetherApp) {
         if (!UssdCode.valid(code)) return JSONObject().put("ok", false).put("err", "Not a carrier code (like *123#)")
         return try {
             closeOpenDialog()   // a dialog left from before (an answer nobody closed) would be read as this answer
-            sh("input keyevent KEYCODE_WAKEUP")
             val extras = android.os.Bundle()
             app.sims.accountFor(sub)?.let { extras.putParcelable(android.telecom.TelecomManager.EXTRA_PHONE_ACCOUNT_HANDLE, it) }
             app.getSystemService(android.telecom.TelecomManager::class.java)
@@ -126,8 +141,9 @@ class UssdDialer(private val app: TetherApp) {
     fun reply(text: String): JSONObject {
         if (!UssdScreen.validReply(text)) return JSONObject().put("ok", false).put("err", "A reply is digits, * or #")
         return try {
-            val xml = dump()
-            val field = UssdScreen.centre(xml, null) ?: return JSONObject().put("ok", false).put("err", "No carrier menu is open")
+            // The screen went off since the menu came (a locked phone): woken, the menu shows again in a moment.
+            val xml = dumpUntil { UssdScreen.centre(it, null) != null }
+            val field = UssdScreen.centre(xml, null) ?: return JSONObject().put("ok", false).put("err", "No carrier menu is open (it may have timed out)")
             val before = UssdScreen.text(xml)
             tap(field)
             sh("input text '$text'")
@@ -139,7 +155,7 @@ class UssdDialer(private val app: TetherApp) {
     }
 
     /** Closes an open menu (Cancel, else Back). */
-    fun cancel() { runCatching { UssdScreen.centre(dump(), "button2")?.let(::tap) ?: sh("input keyevent KEYCODE_BACK") } }
+    fun cancel() { runCatching { UssdScreen.centre(dumpUntil(4) { UssdScreen.centre(it, "button2") != null }, "button2")?.let(::tap) ?: sh("input keyevent KEYCODE_BACK") } }
 
     /** A USSD dialog still on the screen (a final answer, an error): closed with OK, else Back. */
     private fun closeOpenDialog() {
@@ -148,12 +164,16 @@ class UssdDialer(private val app: TetherApp) {
         UssdScreen.centre(xml, if (UssdScreen.waitsForReply(xml)) "button2" else "button1")?.let(::tap) ?: sh("input keyevent KEYCODE_BACK")
     }
 
-    /** Waits (at most 25 s) for a new dialog text that stays the same twice (not "running…"); closes final answers. */
+    /**
+     * Waits (at most 25 s) for a new dialog text that reads the same twice in a row (not the "running…" message);
+     * closes final answers. Reads every 0.3 s (a read itself takes about a second), so the answer reaches the client
+     * soon after the Android phone shows it.
+     */
     private fun await(previous: String?): JSONObject {
         val deadline = android.os.SystemClock.elapsedRealtime() + 25_000
         var last = ""
         while (android.os.SystemClock.elapsedRealtime() < deadline) {
-            Thread.sleep(1000)
+            Thread.sleep(300)
             val xml = dump()
             val text = UssdScreen.text(xml)?.takeIf { it != previous } ?: continue
             if (text == last) {

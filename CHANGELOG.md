@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- SIM phone, USSD: a carrier menu can be answered while the SIM phone is locked. Its screen went off while the menu
+  waited for your reply, so the reply found "no menu". Now:
+  - every read of the menu wakes the screen first;
+  - a reply waits up to about 3 s for the menu to show again;
+  - the answer reaches the main phone sooner: the SIM phone checks for it every 0.3 s instead of every second.
+
 - Android client: the keypad's digits line up. Each digit is centred over its letters and in its key, and keys
   without letters (1, *, #) keep an empty letters line, so every digit sits at the same height, as on a phone's own
   dialer. The same fix centres the number typed above the keypad, the name under it, and the call screen's texts.
