@@ -98,6 +98,7 @@ class CallActivity : Activity() {
             gravity = Gravity.CENTER; setPadding(dp(16), dp(12), dp(16), dp(12)); minHeight = dp(48)
             pressableCard(R.color.surface, 24f) { local = o.local; render() }
         }, LinearLayout.LayoutParams(-2, -2).apply { bottomMargin = dp(8) })
+        phoneAppRow(c.local)
         val conn = app.telecom.connection(c.local)
         if (c.state == "ringing" && c.incoming) {
             root.addView(View(this), LinearLayout.LayoutParams(1, 0, 1f))
@@ -136,6 +137,28 @@ class CallActivity : Activity() {
             roundAction(R.drawable.ic_call_end, getString(R.string.end_call), R.color.bad, sizeDp = 72) { conn?.onDisconnect() ?: app.calls.performEnd(c.local) },
         ).apply { setPadding(0, dp(16), 0, 0) })
         updateProximity(route)
+    }
+
+    /**
+     * The way to the Phone app from here: its own call screen for a call that is in the Phone app; "Move to the Phone
+     * app" for a call in this screen when a Tether calling account is on; else, with the setting on, why the call is
+     * here and where to turn an account on.
+     */
+    private fun phoneAppRow(local: String) {
+        val t = app.telecom
+        when {
+            t.inPhoneApp(local) -> root.addView(button(getString(R.string.open_phone_app_screen), Look.TONAL, iconId = R.drawable.ic_call) {
+                if (t.showPhoneAppCallScreen()) finish()
+            })
+            t.canMoveToPhoneApp(local) -> root.addView(button(getString(R.string.move_to_phone_app), Look.TONAL, iconId = R.drawable.ic_call) {
+                // The Phone app rings a ringing call itself; a running one shows in its call screen once moved.
+                if (t.moveToPhoneApp(local)) main.postDelayed({ t.showPhoneAppCallScreen(); finish() }, 800)
+            })
+            t.usePhoneApp -> {
+                root.addView(label(getString(R.string.call_not_in_phone_app), R.color.muted, 13f).apply { gravity = Gravity.CENTER })
+                root.addView(button(getString(R.string.phone_app_open_accounts), Look.TEXT) { t.openCallingAccounts(this) })
+            }
+        }
     }
 
     /** Earpiece → speaker → Bluetooth / wired (whatever is there) → earpiece. */

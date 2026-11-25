@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+- Android client, calls in the Phone app:
+  - **An incoming call could ring in Tether's own screen instead of the Phone app.** The calling accounts were
+    removed and added again whenever the SIM phone's status briefly listed fewer SIMs (while reconnecting, after a
+    restart or after pairing again). Android then forgot they were turned on. An account now stays registered while
+    the setting is on.
+  - **Which accounts are on** is read from the accounts Android can call with (as the Phone app does) once the Phone
+    permission is allowed. An account Android refuses is skipped.
+  - **The link log** says where each incoming call went, and why if not to the Phone app.
+  - **Tether's call screen** has **Move to the Phone app** (the call goes on, nothing is sent to the SIM phone) for a
+    call shown there, and **Phone app call screen** for a call already in the Phone app. Tapping the call banner opens
+    the Phone app's call screen for such a call.
+  - **Link › Calls** says when an incoming call in Tether's own screen can't wake the screen: since Android 14 that
+    needs full-screen notifications allowed for the app. A button opens that setting.
+
 - Test builds (CI artifacts, and builds without the release key on any computer) are all signed with one shared test
   key, `android/test-signing.keystore`, so each installs over the previous one. Before, every CI run and every computer
   signed with its own random debug key and Android refused the update. Coming from such a build, uninstall once.

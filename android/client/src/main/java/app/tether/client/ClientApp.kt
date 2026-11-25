@@ -147,7 +147,9 @@ class ClientApp : Application(), LinkEvents {
         notifier.clearAll()
     }
 
+    /** The call screen: the Phone app's for a call in the Phone app (if Android lets this app open it), else this app's. */
     fun openCallScreen() {
+        if (telecom.inPhoneApp(calls.calls.firstOrNull()?.local) && telecom.showPhoneAppCallScreen()) return
         runCatching { startActivity(Intent(this, CallActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
     }
 

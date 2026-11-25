@@ -545,9 +545,10 @@ class MainActivity : Activity() {
     }
 
     /**
-     * "Use the Phone app for calls" and what it still needs: the Phone permission (to dial from this app's keypad
-     * through the Phone app) and the calling accounts turned on in the Phone app. Until one is on, calls keep using
-     * this app's call screen, which the card says.
+     * "Use the Phone app for calls" and what it still needs: the calling accounts turned on in the Phone app, and the
+     * Phone permission (to see which accounts are on, to dial from this app's keypad through the Phone app and to open
+     * its call screen). Until an account is on, calls use this app's own call screen, which the card says. Also, for
+     * that own screen: whether Android lets it wake the screen for an incoming call (full-screen notifications).
      */
     private fun callsCard(): View {
         val c = card()
@@ -558,24 +559,35 @@ class MainActivity : Activity() {
             setPadding(0, dp(8), 0, dp(8))
             setOnCheckedChangeListener { _, v ->
                 t.usePhoneApp = v
-                if (v && !t.hasCallPermission()) requestPermissions(arrayOf(Manifest.permission.CALL_PHONE), 2)
+                if (v && !t.hasPhonePermissions()) requestPermissions(t.phonePermissions, 2)
             }
         })
-        if (!t.usePhoneApp) {
-            c.addView(label(getString(R.string.phone_app_off), R.color.muted, 13f))
-            return c
+        if (!t.usePhoneApp) c.addView(label(getString(R.string.phone_app_off), R.color.muted, 13f))
+        else {
+            val accounts = t.phoneAccounts()
+            val off = accounts.filter { !it.second }
+            when {
+                accounts.isEmpty() -> c.addView(label(getString(R.string.phone_app_turn_on), R.color.warn, 13f))
+                off.isEmpty() -> c.addView(label(getString(R.string.phone_app_ready), R.color.ok, 13f))
+                off.size == accounts.size -> c.addView(label(getString(R.string.phone_app_turn_on), R.color.warn, 13f))
+                else -> c.addView(label(getString(R.string.phone_app_turn_on_some, off.joinToString { it.first }), R.color.warn, 13f))
+            }
+            if (off.isNotEmpty() || accounts.isEmpty())
+                c.addView(button(getString(R.string.phone_app_open_accounts), iconId = R.drawable.ic_call) { t.openCallingAccounts(this) })
+            if (!t.hasPhonePermissions()) {
+                c.addView(label(getString(R.string.phone_app_permission), R.color.muted, 13f))
+                c.addView(button(getString(R.string.allow_phone_calls), Look.OUTLINED) { requestPermissions(t.phonePermissions, 2) })
+            }
         }
-        val accounts = t.phoneAccounts()
-        val off = accounts.filter { !it.second }
-        when {
-            off.isEmpty() -> c.addView(label(getString(R.string.phone_app_ready), R.color.ok, 13f))
-            off.size == accounts.size -> c.addView(label(getString(R.string.phone_app_turn_on), R.color.warn, 13f))
-            else -> c.addView(label(getString(R.string.phone_app_turn_on_some, off.joinToString { it.first }), R.color.warn, 13f))
-        }
-        if (off.isNotEmpty()) c.addView(button(getString(R.string.phone_app_open_accounts), iconId = R.drawable.ic_call) { t.openCallingAccounts(this) })
-        if (!t.hasCallPermission()) {
-            c.addView(label(getString(R.string.phone_app_permission), R.color.muted, 13f))
-            c.addView(button(getString(R.string.allow_phone_calls), Look.OUTLINED) { requestPermissions(arrayOf(Manifest.permission.CALL_PHONE), 2) })
+        // Calls in this app's own screen ring through a full-screen notification: from Android 14 that wakes the screen
+        // only with "Full screen notifications" allowed for the app.
+        val nm = getSystemService(android.app.NotificationManager::class.java)
+        if (Build.VERSION.SDK_INT >= 34 && !nm.canUseFullScreenIntent()) {
+            c.addView(label(getString(R.string.full_screen_off), R.color.warn, 13f).apply { setPadding(0, dp(10), 0, dp(2)) })
+            c.addView(button(getString(R.string.full_screen_allow), Look.OUTLINED) {
+                runCatching { startActivity(Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT, Uri.parse("package:$packageName"))) }
+                    .recoverCatching { startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))) }
+            })
         }
         return c
     }
