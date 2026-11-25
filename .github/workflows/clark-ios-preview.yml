@@ -1,0 +1,53 @@
+name: Clark iOS Preview
+on:
+  push:
+    branches: [clark/ios-preview]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  preview:
+    runs-on: macos-15-intel
+    timeout-minutes: 24
+    steps:
+      - uses: actions/checkout@v7
+      - name: Generate Xcode project
+        run: brew install xcodegen && cd ios && xcodegen generate --quiet
+      - name: Build Clark for iPhone Simulator
+        working-directory: ios
+        run: >
+          xcodebuild -project Tether.xcodeproj -scheme Tether
+          -configuration Debug -destination 'generic/platform=iOS Simulator'
+          -derivedDataPath build-preview CODE_SIGNING_ALLOWED=NO
+          -skipMacroValidation -quiet build
+      - name: Capture Persian pairing screens
+        working-directory: ios
+        run: |
+          app="$PWD/build-preview/Build/Products/Debug-iphonesimulator/Tether.app"
+          bundle=$(/usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$app/Info.plist")
+          type=$(xcrun simctl list devicetypes --json | jq -er '[.devicetypes[] | select(.name | test("^iPhone (16|17)$"))] | last | .identifier')
+          udid=$(xcrun simctl create 'Clark Preview' "$type")
+          trap 'xcrun simctl shutdown "$udid" || true; xcrun simctl delete "$udid" || true' EXIT
+          xcrun simctl boot "$udid"
+          xcrun simctl bootstatus "$udid" -b
+          xcrun simctl status_bar "$udid" override --time '9:41' --dataNetwork wifi --wifiMode active --wifiBars 3 --cellularMode active --cellularBars 4 --batteryState unplugged --batteryLevel 100
+          xcrun simctl install "$udid" "$app"
+          mkdir -p preview-images
+          capture() {
+            local name="$1"
+            shift
+            xcrun simctl launch --terminate-running-process "$udid" "$bundle" -AppleLanguages '(fa)' -AppleLocale fa_IR -TetherDemoQuiet "$@"
+            sleep 6
+            xcrun simctl io "$udid" screenshot "preview-images/${name}.png"
+          }
+          capture Clark-iOS-01-Connect
+          capture Clark-iOS-02-Scan -TetherDemoPair
+          capture Clark-iOS-03-Manual -TetherDemoPairManual
+      - uses: actions/upload-artifact@v7
+        with:
+          name: Clark-iOS-Persian-Preview
+          path: ios/preview-images/*.png
+          if-no-files-found: error
+          retention-days: 14
