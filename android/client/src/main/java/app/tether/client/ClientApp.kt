@@ -125,7 +125,12 @@ class ClientApp : Application(), LinkEvents {
 
     /** Coalesced: many changes in one burst redraw once. */
     fun changed() {
-        if (changePosted.compareAndSet(false, true)) main.post { changePosted.set(false); listeners.forEach { runCatching { it() } } }
+        if (changePosted.compareAndSet(false, true)) main.post {
+            changePosted.set(false)
+            // The Phone-app calling accounts follow the Android phone's SIMs (one per SIM).
+            if (::telecom.isInitialized) runCatching { telecom.syncPhoneAccounts() }
+            listeners.forEach { runCatching { it() } }
+        }
     }
 
     fun problem(kind: String, detail: String? = null) { state.problem = Problem(kind, detail); changed() }
@@ -178,7 +183,11 @@ class ClientApp : Application(), LinkEvents {
         override fun showSms(m: Sms, from: String?, sim: String?) = notifier.showSms(m, from ?: format(m.addr), sim)
         override fun clearSms(thread: Long) = notifier.clearSms(thread)
         override fun clearSmsIds(ids: List<Long>) = notifier.clearSmsIds(ids)
-        override fun showMissedCall(c: CallEntry, from: String?, sim: String?) = notifier.showMissedCall(c, from ?: format(c.num), sim)
+        override fun showMissedCall(c: CallEntry, from: String?, sim: String?) {
+            // A call that rang in the Phone app is already there as a missed call.
+            if (::telecom.isInitialized && telecom.missedInPhoneApp(c.num)) return
+            notifier.showMissedCall(c, from ?: format(c.num), sim)
+        }
         override fun schedule(ms: Long, block: () -> Unit) { main.postDelayed(block, ms) }
         override fun changed() = this@ClientApp.changed()
         override fun save(json: String) {

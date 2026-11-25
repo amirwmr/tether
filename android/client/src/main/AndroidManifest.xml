@@ -27,6 +27,8 @@
 
     <!-- Calls: self-managed Telecom calls, the microphone, the camera for the pairing QR code. -->
     <uses-permission android:name="android.permission.MANAGE_OWN_CALLS" />
+    <!-- Dialing from this app's keypad through a Phone-app calling account ("Use the Phone app for calls"). -->
+    <uses-permission android:name="android.permission.CALL_PHONE" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-permission android:name="android.permission.CAMERA" />
@@ -98,6 +100,17 @@
         <service
             android:name=".calls.TetherConnectionService"
             android:exported="true"
+            android:permission="android.permission.BIND_TELECOM_CONNECTION_SERVICE">
+            <intent-filter>
+                <action android:name="android.telecom.ConnectionService" />
+            </intent-filter>
+        </service>
+
+        <!-- The Phone-app calling accounts: the Phone app rings and shows these calls. -->
+        <service
+            android:name=".calls.TetherPhoneConnectionService"
+            android:exported="true"
+            android:label="@string/app_name"
             android:permission="android.permission.BIND_TELECOM_CONNECTION_SERVICE">
             <intent-filter>
                 <action android:name="android.telecom.ConnectionService" />

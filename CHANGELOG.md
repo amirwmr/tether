@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Android client: **calls in the Phone app**. A new switch, Link › Calls › "Use the Phone app for calls" (on by
+  default), makes the Android phone's SIMs calling accounts of this phone, one per SIM ("Tether · Work"). Calls then
+  ring in the Phone app with its call screen and ringtone, can be dialed from its keypad, contacts and call history,
+  and are logged there. Android asks you to turn the accounts on once (Open calling accounts). Until you do, or with
+  the switch off, calls use Tether Client's own call screen as before. The protocol and the SIM phone's app do not
+  change. Calling from Tether Client's own keypad through the Phone app needs the Phone permission. A missed call
+  that rang in the Phone app is not notified a second time.
+
 - This fork is Android only: the iPhone app, the Swift SDK and their tooling are removed. The Android apps, the Kotlin
   library and the protocol are unchanged.
 - Android client: new buttons throughout. Every button now shows a ripple when pressed, looks disabled when it is
