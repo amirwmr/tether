@@ -26,6 +26,7 @@ import app.tether.core.paginate
 import app.tether.data.ContactsRepo
 import app.tether.data.Ussd
 import app.tether.data.UssdCode
+import app.tether.data.UssdDialer
 import app.tether.telecom.FindPhone
 import app.tether.telecom.RingerControl
 import app.tether.telecom.CallRegistry
@@ -61,6 +62,9 @@ class Hub(private val app: TetherApp) : ConnectionListener {
     val share = ShareProxy(app).apply { sharing = app.prefs.getBoolean("share_vpn", false) }
     /** Carrier codes, "find my phone" and the ringer (iPhone Link tab › Phone). */
     val ussd = Ussd(app)
+    /** USSD as the phone's own dialer runs it (dial, read its dialog through adb): carriers that refuse the background
+     *  USSD API answer this way, and menus can be answered ([T.USSD_REPLY]). */
+    private val ussdDialer = UssdDialer(app)
     private val ussdBusy = java.util.concurrent.atomic.AtomicBoolean(false)
     val ringer = RingerControl(app)
     val finder = FindPhone(app).apply {
@@ -378,11 +382,27 @@ class Hub(private val app: TetherApp) : ConnectionListener {
                     val err = if (!UssdCode.valid(code)) "Not a carrier code (like *123#)" else if (dry(c)) "dry run: not sent" else "Another code is still waiting for its answer"
                     c.send(Message(T.USSD_RESULT, JSONObject().put("ok", false).put("err", err), re = m.id))
                 } else Thread({
-                    val r = try { ussd.send(code, sub) } finally { ussdBusy.set(false) }
-                    Log.i(TAG, "ussd -> ok=${r.optBoolean("ok")}")
+                    val r = try {
+                        // As the dialer runs it where Tether's adb can read the phone's USSD dialog; else Android's
+                        // background USSD API, which some carriers refuse ("refused"). Never both: a code sent twice
+                        // could buy a package twice.
+                        if (ussdDialer.available()) ussdDialer.dial(code, sub) else ussd.send(code, sub)
+                    } finally { ussdBusy.set(false) }
+                    Log.i(TAG, "ussd -> ok=${r.optBoolean("ok")} session=${r.optBoolean("session")}")
                     c.send(Message(T.USSD_RESULT, r, re = m.id))
                 }, "ussd").start()
             }
+            T.USSD_REPLY -> {
+                val text = m.b.optString("text")
+                if (dry(c) || !ussdBusy.compareAndSet(false, true)) {
+                    c.send(Message(T.USSD_RESULT, JSONObject().put("ok", false).put("err", if (dry(c)) "dry run: not sent" else "Another code is still waiting for its answer"), re = m.id))
+                } else Thread({
+                    val r = try { ussdDialer.reply(text) } finally { ussdBusy.set(false) }
+                    Log.i(TAG, "ussd reply -> ok=${r.optBoolean("ok")} session=${r.optBoolean("session")}")
+                    c.send(Message(T.USSD_RESULT, r, re = m.id))
+                }, "ussd").start()
+            }
+            T.USSD_CANCEL -> if (!dry(c)) bg { ussdDialer.cancel() }
             T.PHONE_FIND -> bg {
                 val on = m.b.optBoolean("on")
                 val err = if (dry(c)) "dry run" else if (on) finder.start() else { finder.stop(); null }

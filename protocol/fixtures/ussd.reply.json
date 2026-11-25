@@ -1,0 +1,9 @@
+{
+  "t": "ussd.reply",
+  "dir": "client-to-phone",
+  "variants": {
+    "full": {
+      "text": "2"
+    }
+  }
+}

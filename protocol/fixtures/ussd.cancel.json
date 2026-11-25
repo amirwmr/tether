@@ -1,0 +1,7 @@
+{
+  "t": "ussd.cancel",
+  "dir": "client-to-phone",
+  "variants": {
+    "full": {}
+  }
+}

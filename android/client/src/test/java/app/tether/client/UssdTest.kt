@@ -72,6 +72,30 @@ class UssdTest {
         assertEquals(Problem.NO_ANSWER, s.ussdAnswer?.err)
     }
 
+    @Test fun anOpenMenuIsAnsweredAndCancelledOnTheAndroidPhone() {
+        s.sendUssd("*140#", null)
+        s.received(T.USSD_RESULT, JSONObject().put("ok", true).put("text", "1. Balance\n2. Packages").put("session", true), link.last(T.USSD_SEND).id)
+        assertTrue(s.ussdAnswer!!.session)
+        s.replyUssd("2")
+        val reply = link.last(T.USSD_REPLY)
+        assertEquals("2", reply.b.getString("text"))
+        assertEquals("*140#", s.ussdPending)
+        s.received(T.USSD_RESULT, JSONObject().put("ok", true).put("text", "1. Daily\n2. Weekly").put("session", true), reply.id)
+        assertEquals("1. Daily\n2. Weekly", s.ussdAnswer?.text)
+        s.cancelUssd()
+        assertTrue(link.sent.any { it.t == T.USSD_CANCEL })
+        assertNull(s.ussdAnswer)
+    }
+
+    @Test fun aFinalAnswerTakesNoMenuReply() {
+        s.sendUssd("*123#", null)
+        s.received(T.USSD_RESULT, JSONObject().put("ok", true).put("text", "Balance: 5"), link.last(T.USSD_SEND).id)
+        s.replyUssd("1")
+        assertTrue("no menu open: nothing to type into", link.sent.none { it.t == T.USSD_REPLY })
+        s.cancelUssd()
+        assertTrue("nothing open to close", link.sent.none { it.t == T.USSD_CANCEL })
+    }
+
     @Test fun nothingIsSentForANonCodeOrWithoutTheLink() {
         s.sendUssd("12345", null)
         link.isConnected = false

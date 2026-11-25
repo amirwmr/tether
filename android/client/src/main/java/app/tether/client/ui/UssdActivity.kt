@@ -93,9 +93,16 @@ class UssdActivity : Activity() {
         app.state.sendUssd(c, sub)
     }
 
+    /**
+     * A menu reply: typed into the carrier's menu on the Android phone when it is open there ([UssdAnswer.session]);
+     * else sent as a new code that carries the choice (*123# then 2 sends *123*2#).
+     */
     private fun sendReply() {
-        val last = app.state.ussdAnswer?.code ?: return
-        UssdCodes.reply(last, reply.text.toString())?.let { send(it) }
+        val a = app.state.ussdAnswer ?: return
+        val choice = reply.text.toString().filter { it.isDigit() || it == '*' || it == '#' || it == '+' }
+        if (choice.isEmpty()) return
+        if (a.session) { reply.setText(""); app.state.replyUssd(choice); return }
+        UssdCodes.reply(a.code, choice)?.let { send(it) }
     }
 
     private fun recent(): List<String> = prefs.getString(PREF_RECENT, "").orEmpty().split(',').filter(UssdCodes::valid)
@@ -120,7 +127,8 @@ class UssdActivity : Activity() {
 
     /** "Sends *123*2#" under the reply field, as the choice is typed. */
     private fun updateSends() {
-        val next = app.state.ussdAnswer?.code?.let { UssdCodes.reply(it, reply.text.toString()) }
+        // An open menu takes the choice itself: nothing to explain.
+        val next = app.state.ussdAnswer?.takeIf { !it.session }?.code?.let { UssdCodes.reply(it, reply.text.toString()) }
         replySends.text = next?.let { getString(R.string.ussd_reply_sends, it) } ?: ""
     }
 
@@ -140,11 +148,16 @@ class UssdActivity : Activity() {
                 if (a.ok) box.addView(label(a.text.orEmpty(), size = 17f).apply { setTextIsSelectable(true); setPadding(0, dp(6), 0, dp(6)) })
                 else box.addView(label(if (a.err == Problem.NO_ANSWER) getString(R.string.err_no_answer) else a.err ?: getString(R.string.ussd_failed), R.color.warn, 15f))
                 // A menu: answer it with the choice (sent as a new code that carries it).
-                if (a.ok && UssdCodes.isMenu(a.text)) {
+                // A menu: open on the Android phone (answered there), or recognised in a final answer (a new code).
+                if (a.ok && (a.session || UssdCodes.isMenu(a.text))) {
                     (reply.parent as? LinearLayout)?.removeView(reply)
                     (replySends.parent as? LinearLayout)?.removeView(replySends)
                     box.addView(reply)
-                    box.addView(row(button(getString(R.string.ussd_reply)) { sendReply() }, replySends))
+                    box.addView(row(*listOfNotNull(
+                        button(getString(R.string.ussd_reply)) { sendReply() },
+                        if (a.session) button(getString(android.R.string.cancel), Look.TEXT) { app.state.cancelUssd() } else null,
+                        replySends,
+                    ).toTypedArray()))
                     updateSends()
                 }
                 answerBox.addView(box)

@@ -20,6 +20,7 @@ import app.tether.client.ClientApp
 import app.tether.client.R
 import app.tether.client.model.Call
 import app.tether.client.model.Problem
+import app.tether.client.model.UssdCodes
 import java.util.UUID
 
 /**
@@ -520,6 +521,12 @@ open class TetherConnectionService : ConnectionService() {
         val extras = request.extras
         val mirrored = extras?.getString(TelecomBridge.EXTRA_LOCAL)
         val local = mirrored ?: UUID.randomUUID().toString()
+        // A carrier code (*123#) dialed in the Phone app with this app's account: no call (it would never connect, and
+        // the Android phone's own dialog would wait there): it runs as USSD in this app's carrier-code screen.
+        if (mirrored == null && UssdCodes.valid(request.address?.schemeSpecificPart.orEmpty())) {
+            app.openUssd(request.address!!.schemeSpecificPart, app.telecom.subOf(account))
+            return Connection.createFailedConnection(DisconnectCause(DisconnectCause.CANCELED, "USSD"))
+        }
         // Dialed in the Phone app with this app's account but nothing to call through: say why there.
         if (mirrored == null && !app.link.isConnected) {
             app.problem(Problem.NOT_CONNECTED)

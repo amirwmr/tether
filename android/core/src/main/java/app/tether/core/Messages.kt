@@ -43,7 +43,7 @@ object T {
     const val SMS_DELETE = "sms.delete"; const val SMS_DELETED = "sms.deleted"
     const val CALLS_DELETE = "calls.delete"; const val CALLS_DELETED = "calls.deleted"
     const val LISTS_SET = "lists.set"; const val LISTS = "lists"; const val SYNC_IDS = "sync.ids"
-    const val USSD_SEND = "ussd.send"; const val USSD_RESULT = "ussd.result"
+    const val USSD_SEND = "ussd.send"; const val USSD_RESULT = "ussd.result"; const val USSD_REPLY = "ussd.reply"; const val USSD_CANCEL = "ussd.cancel"
     const val PHONE_FIND = "phone.find"; const val PHONE_FINDING = "phone.finding"
     const val RINGER_SET = "ringer.set"; const val RINGER_RESULT = "ringer.result"
     const val UNPAIR = "unpair"; const val ERROR = "error"

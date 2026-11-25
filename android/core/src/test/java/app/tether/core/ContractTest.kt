@@ -43,6 +43,8 @@ class ContractTest {
         "net.get" to emptyList(),
         "net.set" to listOf(F("what", K.STR, true), F("on", K.BOOL, true), F("sub", K.INT), F("slot", K.INT), F("mode", K.STR)),
         "ussd.send" to listOf(F("code", K.STR, true), F("sub", K.INT)),
+        "ussd.reply" to listOf(F("text", K.STR, true)),
+        "ussd.cancel" to emptyList(),
         "phone.find" to listOf(F("on", K.BOOL, true)),
         "ringer.set" to listOf(F("mode", K.STR, true)),
         "unpair" to emptyList(),
