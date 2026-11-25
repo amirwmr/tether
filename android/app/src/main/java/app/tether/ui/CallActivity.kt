@@ -84,7 +84,11 @@ class CallActivity : Activity() {
         }
     }
 
-    override fun onResume() { super.onResume(); built = ""; refresh() }
+    override fun onResume() {
+        super.onResume(); built = ""; refresh()
+        // The call screen is up: the call notification stays in the notification bar instead of popping up over it.
+        CallRegistry.service?.callScreenShown()
+    }
     override fun onPause() { main.removeCallbacksAndMessages(null); super.onPause() }
 
     private val hub get() = (application as TetherApp).hub

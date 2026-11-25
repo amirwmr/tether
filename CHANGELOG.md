@@ -2,6 +2,36 @@
 
 ## Unreleased
 
+- SIM phone: no notification sound before the ringtone. The incoming-call notification's channel played the default
+  notification sound just before Android's ringtone. It is now a silent channel; the ringtone and its vibration are
+  Android's, unchanged.
+
+- Android client: a call on another device (the SIM phone took it, or it was answered there) now stays in the
+  notification bar, "Call on another device" with a **Move here** button. A tap on it opens Tether. Before, the way
+  back was only the banner inside the app. It is quiet (no sound, no pop-up) and goes away when the call ends or comes
+  back here.
+
+- Android client: **Move here** puts the call straight into the Phone app's call screen again. Before, a call taken
+  back from the SIM phone rang in the Phone app like a new call, and answering it then barely worked. Since the
+  Phone-app calling accounts came in, a call that already runs (moved here, answered on the SIM phone, live after a
+  reconnect) was reported to Android as a new incoming call. It is now handed over as an outgoing call, which Android
+  shows in the call screen without ringing, and "Move to the Phone app" does the same for a running call. Both need
+  the Phone permission; without it the call shows in Tether's own call screen, as before. The Phone app's call history
+  may list such a call as outgoing.
+
+- SIM phone: **one silent call no longer stops call audio for good.** The "This Android phone's software gives
+  Tether no call audio" notice could appear after a single call whose first 6 seconds were digital silence (a far
+  end that says nothing on VoLTE). From then on every answered call went back to the SIM phone, so the client's call
+  screen closed as soon as you answered.
+  - The check now waits 15 seconds of silence.
+  - Only that call goes back to the SIM phone.
+  - The phone is remembered as giving no call audio only after two such calls in a row.
+  - Every Tether install tries again; test builds share a version number, so a new install did not clear it before.
+
+- SIM phone: once Tether's call screen is up, the incoming-call notification no longer pops up over it and keeps the
+  screen awake. It stays in the notification bar with Answer and Decline, on a quiet channel ("Call in progress
+  (quiet)"). The ringtone is unchanged: Android plays it. The next call starts with the usual pop-up again.
+
 - SIM phone: **Take the call here.** The call screen on the phone with the SIMs has a new button while the call's
   audio is on the phone in your hand. It moves the call to the SIM phone's own earpiece and microphone, as for a call
   answered there. The client shows the call "on <SIM phone>" and can take it back with **Move here**. No protocol

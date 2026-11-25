@@ -65,10 +65,10 @@ class CallPathTest {
     @Test fun aDownlinkOfZerosIsReportedOnce() {
         // Issue #13 ("no audio either way"): a capture that opens but reads only zeros.
         val w = PathWatch(testLine = false)
-        val events = List(10) { w.second(sec(nz = 0)) }
+        val events = List(20) { w.second(sec(nz = 0)) }
         assertEquals(listOf(Event.DOWN_ZEROS), events.filterNotNull())
-        assertEquals(5, events.indexOf(Event.DOWN_ZEROS))
-        assertNull("not on the test line: its far end plays nothing", PathWatch(testLine = true).let { t -> List(10) { t.second(sec(nz = 0)) }.firstOrNull { it != null } })
+        assertEquals("after 15 s: a far end silent for its first seconds is not a dead path", 14, events.indexOf(Event.DOWN_ZEROS))
+        assertNull("not on the test line: its far end plays nothing", PathWatch(testLine = true).let { t -> List(20) { t.second(sec(nz = 0)) }.firstOrNull { it != null } })
         val alive = PathWatch(testLine = false)
         alive.second(sec()); assertTrue("had audio once: a quiet far end is no dead path", List(10) { alive.second(sec(nz = 0)) }.all { it == null })
     }

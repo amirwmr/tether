@@ -41,6 +41,8 @@ object CallRegistry {
     private val ids = ConcurrentHashMap<Call, String>()
     private val listeners = CopyOnWriteArrayList<(CallInfo) -> Unit>()
     @Volatile var service: TetherInCallService? = null
+    /** Tether's call screen was shown during the current calls: the call notification stops popping up over it. */
+    @Volatile var callScreenSeen = false
     private val main = Handler(Looper.getMainLooper())
     lateinit var app: TetherApp
 
@@ -218,7 +220,23 @@ class TetherInCallService : InCallService() {
     override fun onCallRemoved(call: Call) {
         call.unregisterCallback(uiCallback)
         CallRegistry.removed(call)
-        if (CallRegistry.active().isEmpty()) getSystemService(NotificationManager::class.java).cancel(NOTIF_CALL)
+        if (CallRegistry.active().isEmpty()) {
+            getSystemService(NotificationManager::class.java).cancel(NOTIF_CALL)
+            CallRegistry.callScreenSeen = false
+        }
+    }
+
+    /**
+     * Tether's call screen came up: the call notification moves to the quiet channel (the notification bar only),
+     * so it no longer pops up over the call screen and keeps the screen awake. The pop-up goes first (a notification
+     * changing channel can keep its heads-up), then the quiet one is posted.
+     */
+    fun callScreenShown() {
+        if (CallRegistry.callScreenSeen) return
+        CallRegistry.callScreenSeen = true
+        val call = CallRegistry.active().firstOrNull() ?: return
+        getSystemService(NotificationManager::class.java).cancel(NOTIF_CALL)
+        showCallUi(call)
     }
 
     private fun showCallUi(call: Call) {
@@ -226,7 +244,10 @@ class TetherInCallService : InCallService() {
         val open = PendingIntent.getActivity(this, 1, Intent(this, CallActivity::class.java)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), PendingIntent.FLAG_IMMUTABLE)
         val who = info.name ?: info.num.ifEmpty { getString(R.string.unknown_caller) }
-        val b = Notification.Builder(this, TetherApp.CH_CALLS)
+        // A pop-up (and the full-screen call screen when locked) until Tether's call screen has been shown; then quiet.
+        // The full-screen intent stays on the quiet one: a CallStyle needs it, and a low-importance channel never
+        // launches it.
+        val b = Notification.Builder(this, if (CallRegistry.callScreenSeen) TetherApp.CH_CALLS_QUIET else TetherApp.CH_CALLS)
             .setSmallIcon(R.drawable.ic_tether)
             .setContentIntent(open)
             .setFullScreenIntent(open, true)

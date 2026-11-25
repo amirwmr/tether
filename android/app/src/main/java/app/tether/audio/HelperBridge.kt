@@ -25,6 +25,7 @@ class HelperBridge(private val ctx: Context) {
         const val INFO = 6; const val PROBE = 7; const val QUIT = 8; const val SELFTEST = 9; const val AUTH = 10
         const val NET = 11; const val CHALLENGE = 12; const val PROOF = 14; const val LOCAL = 15; const val CALL = 16; const val DIAG = 17
         private const val PREF_BLOCKED = "audio_blocked_fingerprint"
+        private const val PREF_ZERO_CALLS = "audio_zero_calls"
         /** Largest frame we accept from the helper (a 20 ms PCM frame is 640 bytes; JSON infos are small). */
         const val MAX_FRAME = 1 shl 20
 
@@ -380,14 +381,28 @@ class HelperBridge(private val ctx: Context) {
     fun audioBlocked(): Boolean = app.tether.link.AudioOwner.blocked(prefs.getString(PREF_BLOCKED, null), blockedKey())
     fun rememberAudioBlocked() = prefs.edit().putString(PREF_BLOCKED, blockedKey()).apply()
 
-    /** The firmware and this Tether build: a system update or a new Tether version tries call audio again (a fault
-     *  of Tether's own could look like a phone that gives none, as on the A73 before 1.2.4, issue #13). */
+    /**
+     * The firmware and this Tether install: a system update, a new Tether version or any reinstall (test builds share
+     * a version number) tries call audio again (a fault of Tether's own could look like a phone that gives none, as on
+     * the A73 before 1.2.4, issue #13).
+     */
     private fun blockedKey(): String {
-        val code = runCatching {
-            val pi = ctx.packageManager.getPackageInfo(ctx.packageName, 0)
-            if (android.os.Build.VERSION.SDK_INT >= 28) pi.longVersionCode else @Suppress("DEPRECATION") pi.versionCode.toLong()
-        }.getOrDefault(0L)
-        return "${android.os.Build.FINGERPRINT}|$code"
+        val pi = runCatching { ctx.packageManager.getPackageInfo(ctx.packageName, 0) }.getOrNull()
+        val code = pi?.let { if (android.os.Build.VERSION.SDK_INT >= 28) it.longVersionCode else @Suppress("DEPRECATION") it.versionCode.toLong() } ?: 0L
+        return "${android.os.Build.FINGERPRINT}|$code|${pi?.lastUpdateTime ?: 0L}"
     }
-    fun forgetAudioBlocked() { if (prefs.contains(PREF_BLOCKED)) prefs.edit().remove(PREF_BLOCKED).apply() }
+    fun forgetAudioBlocked() {
+        if (prefs.contains(PREF_BLOCKED) || prefs.contains(PREF_ZERO_CALLS)) prefs.edit().remove(PREF_BLOCKED).remove(PREF_ZERO_CALLS).apply()
+    }
+
+    /** A bridged call read only zeros: true when that makes [AudioOwner.ZERO_CALLS] in a row (then remembered blocked). */
+    fun noteZeroCall(): Boolean {
+        val (n, block) = app.tether.link.AudioOwner.zeroCall(prefs.getInt(PREF_ZERO_CALLS, 0))
+        prefs.edit().putInt(PREF_ZERO_CALLS, n).apply()
+        if (block) rememberAudioBlocked()
+        return block
+    }
+
+    /** A bridged call heard call audio: the count of zero calls in a row starts again. */
+    fun noteAudioHeard() { if (prefs.getInt(PREF_ZERO_CALLS, 0) != 0) prefs.edit().remove(PREF_ZERO_CALLS).apply() }
 }

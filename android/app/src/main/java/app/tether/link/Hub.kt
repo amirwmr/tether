@@ -747,7 +747,7 @@ class Hub(private val app: TetherApp) : ConnectionListener {
     fun callJson(info: CallInfo, c: Connection): JSONObject {
         val o = info.json()
         val t = audio.owner
-        if (AudioOwner.elsewhere(info.state, t, c, helper.audioBlocked()))
+        if (AudioOwner.elsewhere(info.state, t, c, helper.audioBlocked() || audio.givenBack))
             o.put("elsewhere", true).put("where", AudioOwner.where(t?.takeIf { it !== c }?.name, app.keys.deviceName()))
         return o
     }
@@ -847,6 +847,11 @@ class Hub(private val app: TetherApp) : ConnectionListener {
         @Volatile private var codec: VoiceCodec? = null
         /** Client the call audio currently flows to. */
         @Volatile var target: Connection? = null; private set
+        /** This call's audio went back to the phone: its downlink read only zeros ([onHelperPath]). Until no call is left. */
+        @Volatile var givenBack = false; private set
+        /** The bridged call that runs now read only zeros; when its bridging started (elapsed ms). */
+        @Volatile private var zerosThisCall = false
+        @Volatile private var bridgedAt = 0L
         /** Client that should have the call audio (answered / dialed / took it), null when there is no call. */
         @Volatile var owner: Connection? = null; private set
         @Volatile var uplinkMuted = false
@@ -1026,11 +1031,16 @@ class Hub(private val app: TetherApp) : ConnectionListener {
             // This phone gives Tether no call audio (only zeros in a real call; PathWatch never says so on the test
             // line): give the call back to the phone (its own earpiece and microphone on again) instead of leaving
             // both ends silent, and do not bridge this firmware's calls again (issue #13).
+            // Only after [AudioOwner.ZERO_CALLS] such calls in a row: one call of a silent far end looks the same.
             if (running && p.optString("event") == "down-zeros" && !onlyTestLine()) {
-                helper.rememberAudioBlocked()
-                LinkLog.add("call audio: this phone gives Tether no call audio: the call goes back to the Android phone " +
-                    "(its earpiece and microphone), and calls are not bridged on this phone until its software changes " +
-                    "or a self-test during a call hears call audio. If calls on the phone itself have no sound either, restart the phone once")
+                zerosThisCall = true
+                givenBack = true
+                if (helper.noteZeroCall()) LinkLog.add("call audio: this phone gives Tether no call audio (${AudioOwner.ZERO_CALLS} calls in a row): " +
+                    "the call goes back to the Android phone (its earpiece and microphone), and calls are not bridged on this phone " +
+                    "until its software or Tether changes or a self-test during a call hears call audio. If calls on the phone itself " +
+                    "have no sound either, restart the phone once")
+                else LinkLog.add("call audio: only silence from this call for 15 s: it goes back to the Android phone (its earpiece and " +
+                    "microphone); the next call is bridged again")
                 audioCtl.execute { reconcile(); broadcastCalls(); pushStatus() }
             }
         }
@@ -1177,7 +1187,9 @@ class Hub(private val app: TetherApp) : ConnectionListener {
             val o = owner
             val changed = o !== announcedOwner
             announcedOwner = o
-            val want = o != null && o.isUp && CallRegistry.wantsAudio() && !paused && !helper.audioBlocked()
+            // A call whose audio went back to this phone (only zeros heard) stays here; the next call tries again.
+            if (CallRegistry.active().isEmpty()) givenBack = false
+            val want = o != null && o.isUp && CallRegistry.wantsAudio() && !paused && !helper.audioBlocked() && !givenBack
             if (want && !running) start(o!!)
             else if (!want && running) stop()
             else if (running && o != null && target !== o) retarget(o)
@@ -1201,6 +1213,7 @@ class Hub(private val app: TetherApp) : ConnectionListener {
             .put("ms", 20).put("up", true).put("bitrate", (k as? OpusCodec)?.bitrate ?: 64000))
 
         private fun start(c: Connection) {
+            zerosThisCall = false; bridgedAt = SystemClock.elapsedRealtime()
             // Never wait for the helper here (this holds the audio lock): kick it; it attaches in the background
             // and the next 1 s reconcile starts the audio.
             if (!helper.connected || helper.isStale) {
@@ -1282,6 +1295,8 @@ class Hub(private val app: TetherApp) : ConnectionListener {
         private fun stopLocked(sendStop: Boolean) {
             if (!running) return
             running = false
+            // Bridged for 20 s or more without only-zeros: this phone does give call audio.
+            if (!zerosThisCall && SystemClock.elapsedRealtime() - bridgedAt >= 20_000) helper.noteAudioHeard()
             helper.onDown = null
             val statsBefore = helper.lastStats
             helper.stop()
