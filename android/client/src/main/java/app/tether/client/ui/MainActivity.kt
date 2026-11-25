@@ -328,13 +328,13 @@ class MainActivity : Activity() {
     private fun buildKeypad(): View {
         val box = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL; setPadding(dp(24), dp(8), dp(24), dp(16)) }
         // The number, centred, with backspace at its end (a spacer of the same width keeps it centred).
-        keypadNumber = label("", size = 32f).apply { gravity = Gravity.CENTER; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.START
+        keypadNumber = label("", size = 32f).apply { gravity = Gravity.CENTER; textAlignment = View.TEXT_ALIGNMENT_CENTER; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.START
             textDirection = View.TEXT_DIRECTION_LTR }
         keypadBack = iconButton(R.drawable.ic_backspace, getString(R.string.delete_digit), R.color.muted,
             onLong = { number.clear(); updateKeypad() }) { if (number.isNotEmpty()) number.deleteCharAt(number.length - 1); updateKeypad() }
         box.addView(row(View(this).apply { layoutParams = LinearLayout.LayoutParams(dp(48), dp(48)) }, keypadNumber.weight(), keypadBack),
             LinearLayout.LayoutParams(-1, dp(64)))
-        keypadWho = label("", R.color.muted, 14f).apply { gravity = Gravity.CENTER; maxLines = 1 }
+        keypadWho = label("", R.color.muted, 14f).apply { gravity = Gravity.CENTER; textAlignment = View.TEXT_ALIGNMENT_CENTER; maxLines = 1 }
         box.addView(keypadWho, LinearLayout.LayoutParams(-1, -2))
         val grid = GridLayout(this).apply { columnCount = 3; layoutDirection = View.LAYOUT_DIRECTION_LTR }
         val keys = listOf("1" to "", "2" to "ABC", "3" to "DEF", "4" to "GHI", "5" to "JKL", "6" to "MNO", "7" to "PQRS", "8" to "TUV", "9" to "WXYZ", "*" to "", "0" to "+", "#" to "")
