@@ -32,7 +32,7 @@ struct LinkView: View {
 
                 Section {
                     Label {
-                        Text("Tether keeps the link in the background and when the screen is locked. Swiping Tether away in the app switcher stops it until you open it again: iOS does not relaunch a force-quit app for Bluetooth.")
+                        Text("Clark keeps the link in the background and when the screen is locked. Swiping Clark away in the app switcher stops it until you open it again: iOS does not relaunch a force-quit app for Bluetooth.")
                             .font(.footnote)
                     } icon: {
                         Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.yellow)
@@ -51,7 +51,7 @@ struct LinkView: View {
                                 Text("SIM \(sim.slot + 1) · \(sim.name)")
                             }
                         }
-                        LabeledContent("Default phone app", value: s.dialer ? String(localized: "Tether") : String(localized: "Not set"))
+                        LabeledContent("Default phone app", value: s.dialer ? String(localized: "Clark") : String(localized: "Not set"))
                         LabeledContent("Wireless debugging", value: s.adbWifi ? String(localized: "On") : String(localized: "Off"))
                     }
                     Section {
@@ -169,7 +169,7 @@ struct LinkView: View {
                         if let mic = s.helper.mic {
                             Text(CallAudioRows.micFooter(mic))
                         } else if CallAudioRows.showsMicToggle(s) {
-                            Text("Off is safest: on some Android phones muting their microphone also mutes your voice for the other side. When it is on, Tether checks during each call and turns the mute off if your voice does not get through.")
+                            Text("Off is safest: on some Android phones muting their microphone also mutes your voice for the other side. When it is on, Clark checks during each call and turns the mute off if your voice does not get through.")
                         }
                     }
                 }
@@ -201,7 +201,7 @@ struct LinkView: View {
                         Button("Unpair", role: .destructive) { confirmUnpair = true }
                     }
                 } footer: {
-                    Text("On the Android phone, open Tether and tap Pair iPhone, then scan the code with the Camera or here (or paste it). Calls, messages, contacts and call history stay between your devices; there is no server.")
+                    Text("On the Android phone, open Clark and tap Pair iPhone, then scan the code with the Camera or here (or paste it). Calls, messages, contacts and call history stay between your devices; there is no server.")
                 }
                 #if DEBUG
                 DeveloperSection()
@@ -246,7 +246,7 @@ struct LinkView: View {
         case .connecting, .handshaking: String(localized: "Connecting…")
         case .searching: model.isPaired ? String(localized: "Out of reach, will reconnect automatically") : String(localized: "Not paired")
         case .poweredOff: String(localized: "Bluetooth is off")
-        case .unauthorized: String(localized: "Allow Bluetooth for Tether in Settings")
+        case .unauthorized: String(localized: "Allow Bluetooth for Clark in Settings")
         case .unpaired: String(localized: "Not paired")
         }
     }
@@ -262,9 +262,9 @@ struct SetupGuideSection: View {
 
     var body: some View {
         Section {
-            step(1, "Install Tether on the Android phone that holds your SIMs and do its Setup steps (permissions, default phone app, battery, wireless debugging).")
-            step(2, "On the Android phone, open Tether and tap Pair iPhone. A QR code appears for 5 minutes.")
-            step(3, "Point this iPhone's Camera at the code and tap Open in Cellular, or tap the button below and scan it here.")
+            step(1, "Install Clark on the Android phone that holds your SIMs and do its Setup steps (permissions, default phone app, battery, wireless debugging).")
+            step(2, "On the Android phone, open Clark and tap Pair iPhone. A QR code appears for 5 minutes.")
+            step(3, "Point this iPhone's Camera at the code and tap Open in Clark, or tap the button below and scan it here.")
             step(4, "Allow what the iPhone asks: Bluetooth (the link to the phone), Microphone (your voice in calls) and Notifications (calls and new texts).")
             Button { scan() } label: { Label("Scan Pairing Code", systemImage: "qrcode.viewfinder") }
         } header: {
@@ -431,7 +431,7 @@ struct BlockedListView: View {
                 if model.blockLists.system == true {
                     Text("This is the Android phone's own block list: it refuses these calls and messages itself, whichever device you use.")
                 } else {
-                    Text("Tether rejects these calls and does not forward these messages to your devices.")
+                    Text("Clark rejects these calls and does not forward these messages to your devices.")
                 }
             }
         }
@@ -500,9 +500,9 @@ enum CallAudioRows {
 
     static func micFooter(_ mic: String) -> String {
         switch micChoice(mic) {
-        case "mute": return String(localized: "Muting works on some phones only: on others it also mutes your voice for the other side. Tether checks during each call and turns the mute off if your voice does not get through.")
+        case "mute": return String(localized: "Muting works on some phones only: on others it also mutes your voice for the other side. Clark checks during each call and turns the mute off if your voice does not get through.")
         case "open": return String(localized: "The Android phone's microphone stays in the call: the other side may hear your voice twice, and the room around the phone.")
-        default: return String(localized: "Tether puts the call in Android's redirect audio mode: the Android phone's own microphone and earpiece leave the call, so the other side hears only this iPhone. Tether checks that both directions still work and keeps the microphone on where the phone does not allow it.")
+        default: return String(localized: "Clark puts the call in Android's redirect audio mode: the Android phone's own microphone and earpiece leave the call, so the other side hears only this iPhone. Clark checks that both directions still work and keeps the microphone on where the phone does not allow it.")
         }
     }
 
@@ -585,7 +585,7 @@ struct PhoneToolsSection: View {
                 } label: { Label("Ringer", systemImage: "bell") }
                 .disabled(!model.linkState.isConnected)
                 if status.dnd == false {
-                    Text("Silent needs Do Not Disturb access for Tether on the Android phone.").font(.footnote).foregroundStyle(.secondary)
+                    Text("Silent needs Do Not Disturb access for Clark on the Android phone.").font(.footnote).foregroundStyle(.secondary)
                 }
             }
             if let e = model.phoneToolError { Text(e).font(.footnote).foregroundStyle(.red) }
@@ -645,7 +645,7 @@ struct PairingView: View {
                 .padding(32)
             } else {
                 QRScanner(onCode: { text in
-                    if let code = PairingCode.parse(text) { done(code) } else { error = String(localized: "That is not a Tether pairing code.") }
+                    if let code = PairingCode.parse(text) { done(code) } else { error = String(localized: "That is not a Clark pairing code.") }
                 }, onUnavailable: { cameraMissing = true })
                 .ignoresSafeArea()
                 // Viewfinder: where to hold the code.
@@ -662,7 +662,7 @@ struct PairingView: View {
                 }
                 .padding(.horizontal, 16)
                 Spacer()
-                Text(error ?? String(localized: "Scan the code shown in Tether on the Android phone."))
+                Text(error ?? String(localized: "Scan the code shown in Clark on the Android phone."))
                     .font(.callout).foregroundStyle(.white).multilineTextAlignment(.center)
                     .padding(.horizontal, 16).padding(.vertical, 10)
                     .background(.black.opacity(0.45), in: RoundedRectangle(cornerRadius: 12))
@@ -723,7 +723,7 @@ struct ManualPairingView: View {
 
     private func use() {
         if let code = PairingCode.parse(typed.trimmingCharacters(in: .whitespacesAndNewlines)) { done(code) }
-        else { error = String(localized: "That is not a Tether pairing code.") }
+        else { error = String(localized: "That is not a Clark pairing code.") }
     }
 }
 
