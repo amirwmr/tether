@@ -130,4 +130,11 @@
     <string name="report_failed">گزارش ساخته نشد: %1$s</string>
     <string name="report_copied_short">کپی شد، برای کلیپ‌بورد به %1$d کیلوبایت کوتاه شد. «اشتراک‌گذاری» کل فایل را می‌فرستد.</string>
     <string name="action_close">بستن</string>
+    <string name="mute">بی‌صدا</string>
+    <string name="keypad">صفحه‌کلید</string>
+    <string name="hold">انتظار</string>
+    <string name="route_bluetooth">بلوتوث</string>
+    <string name="route_headset">هدست</string>
+    <string name="take_here">ادامهٔ تماس روی همین گوشی</string>
+    <string name="call_on_client">صدای تماس روی %1$s است</string>
 </resources>

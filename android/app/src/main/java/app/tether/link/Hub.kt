@@ -1108,6 +1108,17 @@ class Hub(private val app: TetherApp) : ConnectionListener {
         /** Audio control lock (a ReentrantLock so the ring path can give up waiting for it). */
         private val lock = java.util.concurrent.locks.ReentrantLock()
 
+        /**
+         * The Android phone takes the call itself ("Take the call here" on its call screen): the audio stops going to
+         * the client and stays on this phone's earpiece and microphone, as for a call answered here. The clients are
+         * told at once (`elsewhere`, "on <this phone>") and can move it back with `call.take`.
+         */
+        fun takeHere() {
+            lock.lock(); try { owner = null; claimedKey = null; claimedAt = 0 } finally { lock.unlock() }
+            Log.i(TAG, "call taken on the Android phone itself")
+            audioCtl.execute { reconcile() }
+        }
+
         /** A client answered, dialed or asked to move the call to itself. */
         fun claim(c: Connection) {
             c.lastAction = SystemClock.elapsedRealtime()

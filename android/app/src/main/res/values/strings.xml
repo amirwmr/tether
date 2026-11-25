@@ -130,4 +130,11 @@
     <string name="report_failed">The report could not be made: %1$s</string>
     <string name="report_copied_short">Copied, shortened to %1$d KB for the clipboard. Share sends the whole file.</string>
     <string name="action_close">Close</string>
+    <string name="mute">Mute</string>
+    <string name="keypad">Keypad</string>
+    <string name="hold">Hold</string>
+    <string name="route_bluetooth">Bluetooth</string>
+    <string name="route_headset">Headset</string>
+    <string name="take_here">Take the call here</string>
+    <string name="call_on_client">Call audio is on %1$s</string>
 </resources>

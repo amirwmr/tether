@@ -154,6 +154,10 @@ object CallRegistry {
     fun mute(on: Boolean) = service?.setMuted(on) != null
     fun isMuted(): Boolean = service?.callAudioState?.isMuted == true
 
+    /** The call's audio route and the routes there are (earpiece, speaker, Bluetooth, wired headset). */
+    fun audioState(): CallAudioState? = service?.callAudioState
+    fun setRoute(route: Int) = service?.setAudioRoute(route) != null
+
     fun speaker(on: Boolean) =
         service?.setAudioRoute(if (on) CallAudioState.ROUTE_SPEAKER else CallAudioState.ROUTE_WIRED_OR_EARPIECE) != null
 
