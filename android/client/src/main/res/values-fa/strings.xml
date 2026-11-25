@@ -164,4 +164,5 @@
     <string name="move_to_phone_app">انتقال به برنامهٔ تلفن</string>
     <string name="open_phone_app_screen">صفحهٔ تماس برنامهٔ تلفن</string>
     <string name="call_not_in_phone_app">این تماس در صفحهٔ خود Tether است: هیچ حساب تماس Tether در برنامهٔ تلفن روشن نیست.</string>
+    <string name="call_on_other_device">تماس روی دستگاه دیگر</string>
 </resources>

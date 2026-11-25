@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Android client: a call on another device (the SIM phone took it, or it was answered there) now stays in the
+  notification bar, "Call on another device" with a **Move here** button. A tap on it opens Tether. Before, the way
+  back was only the banner inside the app. It is quiet (no sound, no pop-up) and goes away when the call ends or comes
+  back here.
+
 - Android client: **Move here** puts the call straight into the Phone app's call screen again. Before, a call taken
   back from the SIM phone rang in the Phone app like a new call, and answering it then barely worked. Since the
   Phone-app calling accounts came in, a call that already runs (moved here, answered on the SIM phone, live after a

@@ -165,4 +165,5 @@
     <string name="move_to_phone_app">Move to the Phone app</string>
     <string name="open_phone_app_screen">Phone app call screen</string>
     <string name="call_not_in_phone_app">This call is in Tether\'s own screen: no Tether calling account is turned on in the Phone app.</string>
+    <string name="call_on_other_device">Call on another device</string>
 </resources>

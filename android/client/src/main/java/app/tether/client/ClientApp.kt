@@ -129,6 +129,8 @@ class ClientApp : Application(), LinkEvents {
             changePosted.set(false)
             // The Phone-app calling accounts follow the Android phone's SIMs (one per SIM).
             if (::telecom.isInitialized) runCatching { telecom.syncPhoneAccounts() }
+            // A call on another device: in the notification bar with Move here.
+            if (::calls.isInitialized) runCatching { notifier.syncRemoteCalls(calls.remote) }
             listeners.forEach { runCatching { it() } }
         }
     }

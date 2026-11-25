@@ -128,18 +128,47 @@ class Notifier(private val app: ClientApp) {
         for (t in shown.keys.toList()) { val l = shown[t]!!; if (l.removeAll { it.id in gone } && l.isEmpty()) clearSms(t) }
     }
 
-    fun clearAll() { shown.clear(); nm.cancelAll() }
+    fun clearAll() { shown.clear(); remoteShown.clear(); nm.cancelAll() }
+
+    /** Calls on another device shown now, with the text shown (re-posted only when it changes). */
+    private val remoteShown = HashMap<String, String>()
+
+    /**
+     * A call whose audio is on another device (the Android phone took it, it was answered there or on another client)
+     * stays in the notification bar with **Move here**, so the way back to it is not only the banner inside the app;
+     * a tap opens the app. Quiet (no sound, no pop-up). Gone when the call ends or comes here. Called on every change.
+     */
+    fun syncRemoteCalls(remote: Map<String, app.tether.client.model.Call>) {
+        for (cid in remoteShown.keys - remote.keys) nm.cancel(TAG_REMOTE, cid.hashCode())
+        remoteShown.keys.retainAll(remote.keys)
+        for ((cid, r) in remote) {
+            val text = app.getString(R.string.call_elsewhere, app.displayName(r.num), r.where ?: app.getString(R.string.another_device))
+            if (remoteShown[cid] == text) continue
+            remoteShown[cid] = text
+            nm.notify(TAG_REMOTE, cid.hashCode(), Notification.Builder(app, CH_ONGOING)
+                .setSmallIcon(R.drawable.ic_tether)
+                .setContentTitle(app.getString(R.string.call_on_other_device))
+                .setContentText(text)
+                .setCategory(Notification.CATEGORY_STATUS)
+                .setOngoing(true)
+                .setContentIntent(pi(Intent(app, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), cid.hashCode() + 3))
+                .addAction(Notification.Action.Builder(null, app.getString(R.string.move_here),
+                    br(ACTION_TAKE, cid.hashCode() + 4) { putExtra(EXTRA_CID, cid) }).build())
+                .build())
+        }
+    }
 
     companion object {
         const val CH_LINK = "link"; const val CH_CALLS = "calls"; const val CH_ONGOING = "ongoing"; const val CH_SMS = "messages"; const val CH_MISSED = "missed"
-        const val TAG_CALL = "call"; const val TAG_SMS = "sms"; const val TAG_MISSED = "missed"
+        const val TAG_CALL = "call"; const val TAG_SMS = "sms"; const val TAG_MISSED = "missed"; const val TAG_REMOTE = "remote"
+        const val ACTION_TAKE = "app.tether.client.TAKE"; const val EXTRA_CID = "cid"
         const val ACTION_DECLINE = "app.tether.client.DECLINE"; const val ACTION_REPLY = "app.tether.client.REPLY"
         const val ACTION_READ = "app.tether.client.READ"; const val ACTION_CALL_BACK = "app.tether.client.CALL_BACK"
         const val EXTRA_THREAD = "thread"; const val EXTRA_NUMBER = "number"; const val EXTRA_SUB = "sub"; const val KEY_REPLY = "reply"
     }
 }
 
-/** Notification buttons: decline a call, reply to or mark a conversation read, call back. */
+/** Notification buttons: decline a call, reply to or mark a conversation read, call back, move a call here. */
 class NotificationActions : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val app = context.applicationContext as ClientApp
@@ -158,6 +187,8 @@ class NotificationActions : BroadcastReceiver() {
             }
             Notifier.ACTION_READ -> intent.getLongExtra(Notifier.EXTRA_THREAD, -1).takeIf { it >= 0 }?.let { app.state.markRead(it); app.notifier.clearSms(it) }
             Notifier.ACTION_CALL_BACK -> intent.getStringExtra(Notifier.EXTRA_NUMBER)?.let { app.dial(it, sub) }
+            // Move here from the notification of a call on another device.
+            Notifier.ACTION_TAKE -> intent.getStringExtra(Notifier.EXTRA_CID)?.let { app.calls.take(it) }
         }
     }
 }
