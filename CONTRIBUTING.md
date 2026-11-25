@@ -88,7 +88,7 @@ contributors from outside, CI starts once a maintainer has looked at the change.
    runners the release builds on without a reason.
 5. **Test it.** `tools/test-all.sh` passes; a bug fix comes with a test that fails without it; UI changes show
    screenshots in English and Persian; say on which devices or simulators you tried it.
-6. **No personal data or accounts** in the change: phone numbers, logs from real phones, 
+6. **No personal data or accounts** in the change: phone numbers, logs from real phones,
    profiles, keystores, passwords or tokens (`tools/check-private.sh`).
 7. **Fill in the template.** A pull request with an empty description, failing CI, or a change of the project's name
    is closed with a note on what to do instead.
