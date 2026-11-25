@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+- SIM phone: **USSD codes as the phone's own dialer runs them.** Some carriers refuse codes sent through Android's
+  background USSD API ("The carrier refused the code") but answer a dialed code. Where Tether's Wireless debugging is
+  paired, the SIM phone now:
+  - dials the code on the chosen SIM;
+  - reads the answer from the phone's own USSD dialog;
+  - closes final answers, so no dialog is left on the SIM phone's screen;
+  - keeps a carrier menu open for a reply from the client: new `ussd.reply` / `ussd.cancel` messages and an optional
+    `session` field on `ussd.result`.
+
+  Without Wireless debugging it uses the background API as before. A code is never sent both ways.
+- Android client: a carrier menu open on the SIM phone is answered directly (Reply, Cancel); a menu in a final answer
+  still goes out as a new code. A code dialed in the Phone app with Tether's calling account (or a `tel:` link) now
+  opens the USSD screen instead of starting a call that never connected.
+
 - Android client: **USSD codes** (carrier codes such as *123#). A new button under the call buttons on the keypad
   opens a screen where you:
   - choose the SIM, type a code and see the carrier's answer;
