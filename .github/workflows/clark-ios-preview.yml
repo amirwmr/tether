@@ -20,7 +20,7 @@ jobs:
         run: >
           xcodebuild -project Tether.xcodeproj -scheme Tether
           -configuration Debug -destination 'generic/platform=iOS Simulator'
-          -derivedDataPath build-preview -arch x86_64 ONLY_ACTIVE_ARCH=YES CODE_SIGNING_ALLOWED=NO
+          -derivedDataPath build-preview ARCHS=x86_64 CODE_SIGNING_ALLOWED=NO
           -skipMacroValidation -quiet build
       - name: Capture Persian pairing screens
         working-directory: ios
