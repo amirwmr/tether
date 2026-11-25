@@ -181,8 +181,11 @@ class TelecomBridge(private val app: ClientApp) : CallSink {
     fun canMoveToPhoneApp(local: String): Boolean {
         val old = conns[local] ?: return false
         val c = lastCall[local] ?: return false
+        // A ringing call moves as a ringing call; one that runs moves as an outgoing call (no ring), which needs the
+        // Phone permission.
+        val ringing = old.state == Connection.STATE_RINGING
         return !old.inPhoneApp && local !in moving && old.state != Connection.STATE_HOLDING &&
-            (c.isIncoming || hasCallPermission()) && phoneAccountsOn(c.sub).isNotEmpty()
+            ((ringing && c.isIncoming) || hasCallPermission()) && phoneAccountsOn(c.sub).isNotEmpty()
     }
 
     /**
@@ -204,10 +207,10 @@ class TelecomBridge(private val app: ClientApp) : CallSink {
         pending[local] = c
         if (old.state == Connection.STATE_ACTIVE) pendingActive += local
         try {
-            if (c.isIncoming) tm.addNewIncomingCall(target, Bundle().apply {
+            if (c.isIncoming && ringing) tm.addNewIncomingCall(target, Bundle().apply {
                 putParcelable(TelecomManager.EXTRA_INCOMING_CALL_ADDRESS, Uri.fromParts(PhoneAccount.SCHEME_TEL, c.num, null))
-                putBundle(TelecomManager.EXTRA_INCOMING_CALL_EXTRAS, Bundle().apply { putString(EXTRA_LOCAL, local); putBoolean(EXTRA_STARTED, !ringing) })
-                putString(EXTRA_LOCAL, local); putBoolean(EXTRA_STARTED, !ringing)
+                putBundle(TelecomManager.EXTRA_INCOMING_CALL_EXTRAS, Bundle().apply { putString(EXTRA_LOCAL, local) })
+                putString(EXTRA_LOCAL, local)
             })
             else tm.placeCall(Uri.fromParts(PhoneAccount.SCHEME_TEL, c.num, null), Bundle().apply {
                 putParcelable(TelecomManager.EXTRA_PHONE_ACCOUNT_HANDLE, target)
@@ -299,11 +302,17 @@ class TelecomBridge(private val app: ClientApp) : CallSink {
         lastCall[local] = c
         if (c.state == "active") pendingActive += local
         app.service(callMode = true)
-        if (c.isIncoming) {
+        // A call that already runs (moved here, answered on the Android phone, live at reconnect) goes to the Phone app
+        // as an outgoing call: Android rings a new incoming call there even when its connection is active already, and
+        // answering it then sent an answer for a call long answered. As outgoing it shows in the call screen at once.
+        // Needs the Phone permission; without it, an incoming call stays in this app's own screen (no ring) as before.
+        val phone = phoneAccountsOn(c.sub).firstOrNull()?.takeIf { hasCallPermission() }
+        if (c.isIncoming && phone == null) {
             if (!ring(local, c, started = true)) { pending.remove(local); pendingActive.remove(local); app.calls.localFailed(local) }
             return
         }
-        val target = accountFor(c.sub).let { if (it != account && !hasCallPermission()) account else it }
+        val target = phone ?: account
+        app.journal.add("started call: " + if (target == account) "this app's call screen" else "Phone app (${target.id})")
         try {
             tm.placeCall(Uri.fromParts(PhoneAccount.SCHEME_TEL, c.num, null), Bundle().apply {
                 putParcelable(TelecomManager.EXTRA_PHONE_ACCOUNT_HANDLE, target)
@@ -446,6 +455,10 @@ class TetherConnection(private val app: ClientApp, val local: String, val inPhon
     override fun onAnswer(videoState: Int) { if (!moving) answer() }
 
     private fun answer() {
+        // A call that already runs on the Android phone (reported as started) needs no answer there.
+        if (app.calls.calls.firstOrNull { it.local == local }?.state.let { it == "active" || it == "holding" }) {
+            setActive(); app.notifier.cancelIncoming(local); app.telecom.refreshAudio(); return
+        }
         app.calls.performAnswer(local)
         setActive()
         app.notifier.cancelIncoming(local)
