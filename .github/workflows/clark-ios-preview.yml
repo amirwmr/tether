@@ -15,25 +15,22 @@ jobs:
       - uses: actions/checkout@v7
       - name: Generate Xcode project
         run: brew install xcodegen && cd ios && xcodegen generate --quiet
-      - name: Start iPhone Simulator
-        run: |
-          type=$(xcrun simctl list devicetypes --json | jq -er '[.devicetypes[] | select(.name | test("^iPhone (16|17)$"))] | last | .identifier')
-          udid=$(xcrun simctl create 'Clark Preview' "$type")
-          echo "CLARK_SIMULATOR=$udid" >> "$GITHUB_ENV"
-          xcrun simctl boot "$udid"
       - name: Build Clark for iPhone Simulator
         working-directory: ios
         run: >
           xcodebuild -project Tether.xcodeproj -scheme Tether
           -configuration Debug -destination 'generic/platform=iOS Simulator'
-          -derivedDataPath build-preview CODE_SIGNING_ALLOWED=NO
+          -derivedDataPath build-preview -arch x86_64 ONLY_ACTIVE_ARCH=YES CODE_SIGNING_ALLOWED=NO
           -skipMacroValidation -quiet build
       - name: Capture Persian pairing screens
         working-directory: ios
         run: |
           app="$PWD/build-preview/Build/Products/Debug-iphonesimulator/Tether.app"
           bundle=$(/usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$app/Info.plist")
-          udid="$CLARK_SIMULATOR"
+          type=$(xcrun simctl list devicetypes --json | jq -er '[.devicetypes[] | select(.name | test("^iPhone (16|17)$"))] | last | .identifier')
+          udid=$(xcrun simctl create 'Clark Preview' "$type")
+          trap 'xcrun simctl shutdown "$udid" || true; xcrun simctl delete "$udid" || true' EXIT
+          xcrun simctl boot "$udid"
           xcrun simctl bootstatus "$udid" -b
           xcrun simctl install "$udid" "$app"
           mkdir -p preview-images
