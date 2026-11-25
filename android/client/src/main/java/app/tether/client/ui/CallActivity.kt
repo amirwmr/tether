@@ -12,7 +12,6 @@ import android.view.View
 import android.view.WindowManager
 import android.widget.GridLayout
 import android.widget.LinearLayout
-import android.widget.TextView
 import app.tether.client.R
 import app.tether.client.calls.LocalCall
 import app.tether.client.calls.MicPolicy
@@ -94,46 +93,48 @@ class CallActivity : Activity() {
         root.addView(label(listOfNotNull(stateText, sim).joinToString(" · "), R.color.muted, 16f).apply { gravity = Gravity.CENTER; setPadding(0, dp(8), 0, dp(32)) })
         app.micWarning?.let { root.addView(label(getString(micText(it)), R.color.warn, 14f).apply { gravity = Gravity.CENTER; setPadding(0, 0, 0, dp(16)) }) }
         val others = app.calls.calls.filter { it.local != c.local }
+        // Another call (waiting or on hold): tap to show it here.
         for (o in others) root.addView(label("${o.name ?: app.format(o.number)} · ${getString(if (o.state == "holding") R.string.call_on_hold else R.string.call_waiting)}", R.color.warn, 14f).apply {
-            gravity = Gravity.CENTER; setOnClickListener { local = o.local; render() }
-        })
+            gravity = Gravity.CENTER; setPadding(dp(16), dp(12), dp(16), dp(12)); minHeight = dp(48)
+            pressableCard(R.color.surface, 24f) { local = o.local; render() }
+        }, LinearLayout.LayoutParams(-2, -2).apply { bottomMargin = dp(8) })
         val conn = app.telecom.connection(c.local)
         if (c.state == "ringing" && c.incoming) {
             root.addView(View(this), LinearLayout.LayoutParams(1, 0, 1f))
-            root.addView(evenRow(
-                pill(getString(R.string.decline), colorId = R.color.bad) { conn?.onReject() ?: app.calls.performEnd(c.local) },
-                pill(getString(R.string.answer), colorId = R.color.ok) { conn?.onAnswer() },
+            root.addView(actionRow(
+                roundAction(R.drawable.ic_call_end, getString(R.string.decline), R.color.bad, sizeDp = 72) { conn?.onReject() ?: app.calls.performEnd(c.local) },
+                roundAction(R.drawable.ic_call, getString(R.string.answer), R.color.ok, sizeDp = 72) { conn?.onAnswer() },
             ))
             updateProximity(null)
             return
         }
         if (showKeys) {
             val grid = GridLayout(this).apply { columnCount = 3; layoutDirection = View.LAYOUT_DIRECTION_LTR }
-            for (k in listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", "*", "0", "#")) grid.addView(TextView(this).apply {
-                text = k; textSize = 26f; gravity = Gravity.CENTER; setTextColor(col(R.color.text)); background = round(R.color.surface, 68)
-                setOnClickListener { app.calls.performDtmf(c.local, k) }
-            }, GridLayout.LayoutParams().apply { width = dp(68); height = dp(68); setMargins(dp(10), dp(6), dp(10), dp(6)) })
+            for (k in listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", "*", "0", "#")) grid.addView(dialKey(k, null, 64) {
+                app.calls.performDtmf(c.local, k)
+            }, GridLayout.LayoutParams().apply { width = dp(64); height = dp(64); setMargins(dp(12), dp(6), dp(12), dp(6)) })
             root.addView(grid)
         }
         root.addView(View(this), LinearLayout.LayoutParams(1, 0, 1f))
         val audio = app.telecom.audioState
         val route = audio?.route ?: CallAudioState.ROUTE_EARPIECE
-        val routeName = getString(when (route) {
-            CallAudioState.ROUTE_SPEAKER -> R.string.route_speaker; CallAudioState.ROUTE_BLUETOOTH -> R.string.route_bluetooth
-            CallAudioState.ROUTE_WIRED_HEADSET -> R.string.route_wired; else -> R.string.route_earpiece
-        })
+        val (routeName, routeIcon) = when (route) {
+            CallAudioState.ROUTE_SPEAKER -> R.string.route_speaker to R.drawable.ic_speaker
+            CallAudioState.ROUTE_BLUETOOTH -> R.string.route_bluetooth to R.drawable.ic_bluetooth
+            CallAudioState.ROUTE_WIRED_HEADSET -> R.string.route_wired to R.drawable.ic_headset
+            else -> R.string.route_speaker to R.drawable.ic_speaker   // on the earpiece: the switch reads "Speaker", off
+        }
         val muted = app.audio.muted
-        root.addView(evenRow(
-            pill(getString(if (muted) R.string.unmute_mic else R.string.mute_mic), secondary = !muted) { app.telecom.setMuted(!muted) },
-            pill(routeName, secondary = route == CallAudioState.ROUTE_EARPIECE) { nextRoute(audio) },
-            pill(getString(R.string.keypad), secondary = !showKeys) { showKeys = !showKeys; render() },
-        ))
-        if (app.calls.cidOf(c.local) != null) root.addView(evenRow(
-            pill(getString(if (c.held) R.string.resume else R.string.hold), secondary = !c.held) { if (c.held) conn?.onUnhold() else conn?.onHold() },
-        ))
-        root.addView(pill(getString(R.string.end_call), colorId = R.color.bad) { conn?.onDisconnect() ?: app.calls.performEnd(c.local) }.apply {
-            layoutParams = LinearLayout.LayoutParams(-1, dp(52)).apply { topMargin = dp(20) }
-        })
+        val canHold = app.calls.cidOf(c.local) != null
+        root.addView(actionRow(*listOfNotNull(
+            roundAction(if (muted) R.drawable.ic_mic_off else R.drawable.ic_mic, getString(R.string.mute_mic), checked = muted) { app.telecom.setMuted(!muted) },
+            roundAction(routeIcon, getString(routeName), checked = route != CallAudioState.ROUTE_EARPIECE) { nextRoute(audio) },
+            roundAction(R.drawable.ic_dialpad, getString(R.string.keypad), checked = showKeys) { showKeys = !showKeys; render() },
+            if (canHold) roundAction(R.drawable.ic_pause, getString(R.string.hold), checked = c.held) { if (c.held) conn?.onUnhold() else conn?.onHold() } else null,
+        ).toTypedArray()))
+        root.addView(actionRow(
+            roundAction(R.drawable.ic_call_end, getString(R.string.end_call), R.color.bad, sizeDp = 72) { conn?.onDisconnect() ?: app.calls.performEnd(c.local) },
+        ).apply { setPadding(0, dp(16), 0, 0) })
         updateProximity(route)
     }
 

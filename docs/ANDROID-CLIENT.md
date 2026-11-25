@@ -57,7 +57,8 @@ and call history. The SIM phone stays in a bag; you use the other phone.
 - A call answered on the SIM phone itself whose audio comes to this client while it is in the background may have a
   silent microphone: Android lets a background app start a microphone service only in some cases. Calls answered on
   this phone (its call screen or notification) are not affected.
-- The UI is plain Android views (like the SIM phone's own app), not Material components.
+- The UI is plain Android views built in code, not Material components. Its buttons come from `ui/Buttons.kt`
+  (ripples, a 48dp minimum, TalkBack labels; icons in `res/drawable/ic_*.xml`, tinted from the palette).
 
 ## Building
 

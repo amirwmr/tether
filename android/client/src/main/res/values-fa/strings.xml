@@ -41,6 +41,7 @@
     <string name="copy_number">کپی شماره</string>
     <string name="data_sim">سیم‌کارت داده</string>
     <string name="decline">رد کردن</string>
+    <string name="delete_digit">پاک کردن یک رقم (برای پاک کردن همه نگه دارید)</string>
     <string name="delete">حذف</string>
     <string name="delete_conversation">حذف گفتگو</string>
     <string name="delete_conversation_confirm">این گفتگو روی گوشی اندروید حذف شود؟</string>
@@ -77,6 +78,7 @@
     <string name="mute_mic">قطع میکروفون</string>
     <string name="name">نام</string>
     <string name="network_mode">شبکه · %1$s</string>
+    <string name="more_options">گزینه‌های بیشتر</string>
     <string name="new_contact">مخاطب جدید</string>
     <string name="new_message">پیام جدید</string>
     <string name="next">بعدی</string>
@@ -116,6 +118,7 @@
     <string name="state_searching">در جستجوی گوشی اندروید…</string>
     <string name="state_unpaired">جفت نشده</string>
     <string name="switches">گوشی اندروید</string>
+    <string name="tab_badge">%1$s، %2$d مورد جدید</string>
     <string name="tab_contacts">مخاطبین</string>
     <string name="tab_keypad">صفحه‌کلید</string>
     <string name="tab_link">اتصال</string>

@@ -40,16 +40,17 @@ jobs:
         with:
           name: android-test-reports
           path: android/*/build/reports/
-      # A build for testers without a release: debug-signed (CI has no release key), kept 30 days.
+      # A build for testers on every run (pull requests too): debug-signed (CI has no release key), kept 30 days.
+      # Download it from the run's Summary page, "Artifacts".
       - name: Name the APKs
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
-          v=$(tr -d '[:space:]' < VERSION)-${GITHUB_SHA::7}
+          v=$(tr -d '[:space:]' < VERSION)-${HEAD_SHA::7}
           mkdir -p dist
           cp android/app/build/outputs/apk/release/app-release.apk "dist/Tether-A54-$v-debug-signed.apk"
           cp android/client/build/outputs/apk/release/client-release.apk "dist/Tether-Client-$v-debug-signed.apk"
       - name: APKs for testers
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v7
         with:
           name: tether-apks-debug-signed
@@ -75,77 +76,26 @@ jobs:
         working-directory: examples/kotlin-jvm
         run: ./gradlew --console=plain run | tee out.txt && grep -qx ok out.txt
 
-  # One macOS job for everything Apple: GitHub's macOS runners are scarce at busy times ("not acquired by Runner"),
-  # so CI asks for one per push instead of two.
-  apple:
-    name: Apple (Swift SDK, docs, examples, iPhone app)
-    runs-on: macos-15
-    timeout-minutes: 60
-    steps:
-      - uses: actions/checkout@v7
-      - name: Swift SDK tests (the root package runs the same tests as ios/TetherCore)
-        run: swift test
-      - name: Builds for iOS, tvOS, watchOS, visionOS (each one whose SDK the runner has)
-        run: |
-          for p in iOS:iphoneos tvOS:appletvos watchOS:watchos visionOS:xros; do
-            name=${p%%:*}; sdk=${p##*:}
-            if ! xcodebuild -showsdks | grep -q -- "-sdk $sdk"; then echo "$name: SDK not installed, skipped"; continue; fi
-            xcodebuild -scheme Tether -destination "generic/platform=$name" -derivedDataPath build-sdk \
-              -skipMacroValidation build -quiet
-          done
-      - name: Documentation (DocC)
-        run: swift package generate-documentation --target TetherCore --warnings-as-errors
-      - name: Example Loopback
-        working-directory: examples/swift/Loopback
-        run: swift run
-      - name: Example MacCentral (build only, it needs Bluetooth)
-        working-directory: examples/swift/MacCentral
-        run: swift build
-      - name: XcodeGen
-        run: brew install xcodegen && cd ios && xcodegen generate --quiet
-      # Release, as the published IPA is built: the unit tests below build Debug, so both configurations are checked.
-      - name: iPhone app build (Release, unsigned)
-        working-directory: ios
-        run: >
-          xcodebuild -project Tether.xcodeproj -scheme Tether -configuration Release -destination 'generic/platform=iOS'
-          -derivedDataPath build-gen -skipMacroValidation CODE_SIGNING_ALLOWED=NO build -quiet
-      - name: iPhone app unit tests
-        working-directory: ios
-        run: |
-          if ! grep -q TetherTests project.yml; then echo "no app test target"; exit 0; fi
-          type=$(xcrun simctl list devicetypes | grep -m1 -oE 'iPhone [0-9]+ \(' | sed 's/ ($//')
-          udid=$(xcrun simctl create ci-tests "$type")
-          xcodebuild test -project Tether.xcodeproj -scheme Tether -destination "id=$udid" \
-            -derivedDataPath build-test -skipMacroValidation -quiet
-
-  swift-linux:
-    name: Swift on Linux
-    runs-on: ubuntu-latest
-    container: swift:6.0
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v7
-      - name: Swift SDK (root package), build and tests
-        run: swift build && swift test
-      - name: Example Loopback
-        working-directory: examples/swift/Loopback
-        run: swift run
-
   hygiene:
     name: Whitespace, scripts, privacy patterns
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7
-      - run: git diff --check $(git hash-object -t tree /dev/null) HEAD -- . ':!ios/TetherCore/Sources/COpus'
+      - run: git diff --check $(git hash-object -t tree /dev/null) HEAD -- .
       - run: sh -n tools/dbg.sh && sh -n tools/lib.sh
-      - run: sudo apt-get install -y zsh >/dev/null && zsh -n tools/reinstall-ios.sh && zsh -n tools/device-test.sh && zsh -n tools/test-all.sh && zsh -n tools/release.sh
-      - run: python3 tools/altstore-source.py selftest && python3 tools/check-docs-links.py
+      - run: sudo apt-get install -y zsh >/dev/null && zsh -n tools/device-test.sh && zsh -n tools/test-all.sh && zsh -n tools/release.sh
+      - run: python3 tools/check-docs-links.py
       - run: zsh tools/check-private.sh --all
-      # The theme and identity guardrails (CONTRIBUTING.md, "Design rules"); on a pull request also what it may not touch.
+      # The theme and identity guardrails (CONTRIBUTING.md, "Design rules"); on a pull request from outside the
+      # project also what it may not touch. Pull requests by the owner, members and collaborators may change the
+      # protected files (workflows, palette, ids, the checks): that rule is for contributions from outside.
       - name: Guardrails
+        env:
+          AUTHOR_ASSOCIATION: ${{ github.event.pull_request.author_association }}
         run: |
-          if [ "${{ github.event_name }}" = pull_request ]; then
+          case "$AUTHOR_ASSOCIATION" in OWNER|MEMBER|COLLABORATOR) maintainer=1 ;; *) maintainer=0 ;; esac
+          if [ "${{ github.event_name }}" = pull_request ] && [ $maintainer = 0 ]; then
             git fetch --no-tags --depth=200 origin "${{ github.base_ref }}"
             git fetch --no-tags --deepen=200 origin HEAD 2>/dev/null || true
             python3 tools/check-guardrails.py --base "origin/${{ github.base_ref }}"

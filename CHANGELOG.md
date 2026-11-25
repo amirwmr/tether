@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+- This fork is Android only: the iPhone app, the Swift SDK and their tooling are removed. The Android apps, the Kotlin
+  library and the protocol are unchanged.
+- Android client: new buttons throughout. Every button now shows a ripple when pressed, looks disabled when it is
+  disabled, is at least 48dp tall and wraps its text, so large font sizes and Persian no longer clip. TalkBack
+  announces each one as a button, with a description for icon-only ones.
+  - Tabs have icons, a highlight behind the selected one, and a red count badge for missed calls and unread texts.
+  - Keypad: round keys with a ripple and a key-press haptic. Backspace sits next to the number (hold it to clear).
+    A green call button per SIM, disabled while the number is empty. The keypad is no longer rebuilt on every key.
+  - Call screen: round actions with a label under each (Mute, Speaker / Bluetooth / Headset, Keypad, Hold). They
+    fill with the accent colour when on. Answer, Decline and End call are large round buttons.
+  - Conversation: call and menu icons in the header, a round Send button (disabled while the text is empty), and a
+    SIM chip.
+  - Recents, Contacts and Messages: Clear all, New contact and New message are icon buttons beside the search field.
+    The call banner and the error banner show a ripple when tapped.
+  - Link: the data SIM is a row of choices with the chosen one filled; the quieter actions use quieter styles.
+
 ## 1.2.4 — 2026-11-25
 
 - Coming from 1.1.0: uninstall the 1.1.0 Android app first (1.2 APKs are signed with the project's release key), then

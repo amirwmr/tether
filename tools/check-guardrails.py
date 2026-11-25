@@ -5,13 +5,10 @@
   python3 tools/check-guardrails.py --base <ref>     also: what this change against <ref> may not touch (CI on pull
                                                      requests, with the pull request's base branch)
 
-Theme scan, both apps:
-  - no raw colours in code: Swift Color(red:/hue:/white:), UIColor(red:...), colour literals; Kotlin Color.parseColor,
+Theme scan, both Android apps:
+  - no raw colours in code: Kotlin Color.parseColor,
     Color.rgb/argb, 0xAARRGGBB literals, Color.RED/BLUE/...; Android resources with #hex outside the palette files and
-    the launcher artwork. The palette is Assets.xcassets/AccentColor (iPhone) and res/values*/colors.xml (Android).
-  - no colours off the palette: purple, pink, cyan, mint, brown (iOS system colours used the way Apple's own apps use
-    them stay allowed: red, green, orange, yellow, blue, indigo, gray, black, white, teal and the semantic styles).
-  - no forcing light mode (the apps are dark first and follow the system).
+    the launcher artwork. The palette is res/values*/colors.xml.
   A line that needs an exception says why on the same line: `// theme: ok <reason>`; reviewers check the reason.
 
 Protected (with --base), changed only by the maintainer's own commits, never in a contributor's pull request:
@@ -27,14 +24,9 @@ ROOT = Path(__file__).resolve().parent.parent
 
 MARK = "theme: ok"
 
-SWIFT_DIRS = ["ios/Tether"]
 KOTLIN_DIRS = ["android/app/src/main/java", "android/client/src/main/java"]
 RES_DIRS = ["android/app/src/main/res", "android/client/src/main/res"]
 
-SWIFT_RAW = re.compile(r"\bColor\(\s*(red|hue|white|\.sRGB|\.displayP3|\.sRGBLinear)\s*[:,]|\bUIColor\(\s*(red|hue|white|displayP3Red)\s*:|#colorLiteral|\bColor\(\s*hex")
-SWIFT_OFF = re.compile(r"\b(Color|UIColor)\.(purple|pink|cyan|mint|brown|systemPurple|systemPink|systemCyan|systemMint|systemBrown)\b"
-                       r"|\((?:\s*)\.(purple|pink|cyan|mint|brown)\s*\)")
-SWIFT_LIGHT = re.compile(r"preferredColorScheme\(\s*\.light\s*\)|\\\.colorScheme\s*,\s*\.light")
 KOTLIN_RAW = re.compile(r"Color\.parseColor|Color\.(rgb|argb)\(|\b0x[fF]{2}[0-9A-Fa-f]{6}\b|\bColor\.(RED|BLUE|GREEN|YELLOW|CYAN|MAGENTA|GRAY|DKGRAY|LTGRAY|WHITE|BLACK)\b")
 RES_HEX = re.compile(r"#[0-9A-Fa-f]{3,8}\b")
 # Palette and launcher artwork: the only resources that hold colour values.
@@ -43,10 +35,7 @@ RES_ALLOWED = re.compile(r"/res/values[^/]*/colors\.xml$|/res/drawable[^/]*/(ic_
 PROTECTED_PATHS = [
     re.compile(r"^android/(app|client)/src/main/res/values[^/]*/(colors|themes)\.xml$"),
     re.compile(r"^android/(app|client)/src/main/res/(drawable[^/]*/(ic_launcher_[a-z]+|ic_tether)\.xml|mipmap[^/]*/.*)$"),
-    re.compile(r"^ios/Tether/Resources/Assets\.xcassets/(AccentColor|AppIcon|CallKitIcon)\.[a-z]+/"),
     re.compile(r"^docs/images/logo\.svg$"),
-    re.compile(r"^ios/Config/Tether\.xcconfig$"),
-    re.compile(r"^ios/project\.yml$"),
     re.compile(r"^android/(app|client)/build\.gradle\.kts$"),
     re.compile(r"^\.github/workflows/"),
     re.compile(r"^tools/release\.sh$"),
@@ -54,8 +43,8 @@ PROTECTED_PATHS = [
     re.compile(r"^tools/(check-guardrails\.py|check-private\.sh|test-all\.sh)$"),
 ]
 # Lines whose change renames the product or an app, wherever they are.
-IDENTITY_LINE = re.compile(r'name="app_name"|name="dialer_label"|CFBundleDisplayName|CFBundleName|TETHER_DISPLAY_NAME|'
-                           r"applicationId|PRODUCT_BUNDLE_IDENTIFIER|TETHER_BUNDLE_ID|\bnamespace\s*=")
+IDENTITY_LINE = re.compile(r'name="app_name"|name="dialer_label"|'
+                           r"applicationId|\bnamespace\s*=")
 
 
 def files(dirs, suffix):
@@ -73,10 +62,6 @@ def scan():
             if pattern.search(line) and MARK not in line:
                 problems.append(f"{path.relative_to(ROOT)}:{n}: {why}: {line.strip()[:120]}")
 
-    for p in files(SWIFT_DIRS, ".swift"):
-        check(p, SWIFT_RAW, "raw colour (use AccentColor or a system colour)")
-        check(p, SWIFT_OFF, "colour off the palette")
-        check(p, SWIFT_LIGHT, "forces light mode (the app follows the system, dark first)")
     for p in files(KOTLIN_DIRS, ".kt"):
         check(p, KOTLIN_RAW, "raw colour (use R.color.* from colors.xml)")
     for p in files(RES_DIRS, ".xml"):
