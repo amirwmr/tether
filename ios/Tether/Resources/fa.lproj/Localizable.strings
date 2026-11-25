@@ -276,3 +276,13 @@
 "Does not reach: microphone off on this iPhone" = "نمی‌رسد: میکروفون این آیفون خاموش است";
 "Does not reach: no sound from this iPhone's microphone" = "نمی‌رسد: از میکروفون این آیفون صدایی نمی‌آید";
 "Open Settings" = "باز کردن تنظیمات";
+
+/* Pairing scanner */
+"Enter Code Manually" = "ورود دستی کد";
+"Starting camera…" = "در حال آماده‌سازی دوربین…";
+"Camera access is off" = "دسترسی به دوربین بسته است";
+"Allow camera access in Settings, or enter the code by hand." = "دسترسی به دوربین را در تنظیمات مجاز کنید یا کد را دستی وارد کنید.";
+"Camera not available" = "دوربین در دسترس نیست";
+"You can still pair by entering the code manually." = "برای جفت‌سازی می‌توانید کد را دستی وارد کنید.";
+"Pairing code" = "کد جفت‌سازی";
+"Paste a pairing link or type the code from Clark on your Android phone." = "پیوند جفت‌سازی را جای‌گذاری کنید یا کدی را که کلارک روی گوشی اندرویدی نشان می‌دهد وارد کنید.";
