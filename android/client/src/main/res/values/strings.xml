@@ -157,7 +157,12 @@
     <string name="phone_app_turn_on">One step left: turn Tether on in the Phone app\'s calling accounts. Until then, calls use this app\'s own call screen.</string>
     <string name="phone_app_turn_on_some">Not turned on yet in the Phone app\'s calling accounts: %1$s. Calls on it use this app\'s own call screen.</string>
     <string name="phone_app_open_accounts">Open calling accounts</string>
-    <string name="phone_app_permission">To call from this app\'s keypad through the Phone app, allow Phone calls.</string>
+    <string name="phone_app_permission">Allow phone calls, so Tether can see which calling accounts are on, dial from its keypad through the Phone app and open the Phone app\'s call screen.</string>
     <string name="phone_account_description">Calls through your Android phone with the SIM</string>
     <string name="allow_phone_calls">Allow phone calls</string>
+    <string name="full_screen_off">Incoming calls in Tether\'s own call screen can\'t wake the screen: full-screen notifications are off for Tether.</string>
+    <string name="full_screen_allow">Allow full-screen notifications</string>
+    <string name="move_to_phone_app">Move to the Phone app</string>
+    <string name="open_phone_app_screen">Phone app call screen</string>
+    <string name="call_not_in_phone_app">This call is in Tether\'s own screen: no Tether calling account is turned on in the Phone app.</string>
 </resources>

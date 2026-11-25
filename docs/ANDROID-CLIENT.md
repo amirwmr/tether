@@ -34,7 +34,10 @@ and call history. The SIM phone stays in a bag; you use the other phone.
   `TetherPhoneConnectionService`). The Phone app rings, shows the call, dials out from its keypad, contacts and history,
   and logs the calls. The user turns the accounts on once in the Phone app's calling accounts. Until then, or with the
   switch off, calls use the self-managed account and this app's call screen (`TelecomBridge.accountFor`). Only the
-  local Telecom side changes: the messages on the link are the same.
+  local Telecom side changes: the messages on the link are the same. Accounts stay registered while the switch is on
+  (removing one makes Android forget it was turned on). The call screen can move a call shown there to the Phone app
+  (`moveToPhoneApp`: the same call reported again on a Phone-app account, the old connection dropped without a word to
+  the SIM phone), and the link log says where each incoming call went.
 - **Call audio** both ways: `AudioRecord` (VOICE_COMMUNICATION, with the platform's echo canceller, noise suppressor
   and gain control) → Opus (Concentus, the codec code shared with the SIM phone) → link; link → Opus → the playout
   buffer ported from TetherCore (same numbers, same tests) → `AudioTrack` (voice communication). A local ringback
