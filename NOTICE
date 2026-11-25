@@ -1,8 +1,8 @@
 Tether
 Copyright (c) 2026 The Tether authors. Licensed under the MIT License (see LICENSE).
 
-Tether's source code contains no third-party code, except the Android client's button icons
-(`android/client/src/main/res/drawable/ic_*.xml` other than the launcher and `ic_tether`): path data of Google's
+Tether's source code contains no third-party code, except the button icons of both Android apps
+(`android/{app,client}/src/main/res/drawable/ic_*.xml` other than the launcher and `ic_tether`): path data of Google's
 Material Design icons, Apache-2.0 (https://github.com/google/material-design-icons). The Android apps are built with these libraries, fetched by
 Gradle at build time and included in the APKs you build (the Android client, `android/client`, uses only Concentus,
 ZXing core and the Kotlin standard library from this list):

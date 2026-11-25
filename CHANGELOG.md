@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- SIM phone: **Take the call here.** The call screen on the phone with the SIMs has a new button while the call's
+  audio is on the phone in your hand. It moves the call to the SIM phone's own earpiece and microphone, as for a call
+  answered there. The client shows the call "on <SIM phone>" and can take it back with **Move here**. No protocol
+  change: the client is told through the call updates it already gets.
+- SIM phone: **a full call screen.** It now has the same round buttons as the client: Mute, the audio route
+  (earpiece, speaker, Bluetooth, headset), Keypad (DTMF), Hold and End, and Decline and Answer while ringing.
+  Mute and the route show only while the call is on the SIM phone itself. The phone maker's own call screen can't
+  show these calls while Tether is the SIM phone's phone app, which Tether needs to control calls.
+
 - Android client, calls in the Phone app:
   - **An incoming call could ring in Tether's own screen instead of the Phone app.** The calling accounts were
     removed and added again whenever the SIM phone's status briefly listed fewer SIMs (while reconnecting, after a
