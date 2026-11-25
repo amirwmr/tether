@@ -43,7 +43,7 @@ class MainActivity : Activity() {
     private lateinit var content: FrameLayout
     private lateinit var banner: LinearLayout
     private lateinit var status: TextView
-    private val tabButtons = ArrayList<TextView>()
+    private val tabs = ArrayList<TabView>()
     private var tab = TAB_KEYPAD
     private val listener: () -> Unit = { render() }
     private var query = ""
@@ -64,14 +64,11 @@ class MainActivity : Activity() {
         root.addView(banner)
         content = FrameLayout(this)
         root.addView(content, LinearLayout.LayoutParams(-1, 0, 1f))
-        val bar = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setBackgroundColor(col(R.color.surface)) }
-        listOf(R.string.tab_recents, R.string.tab_contacts, R.string.tab_keypad, R.string.tab_messages, R.string.tab_link).forEachIndexed { i, s ->
-            val b = TextView(this).apply {
-                text = getString(s); gravity = Gravity.CENTER; textSize = 13f; setPadding(0, dp(14), 0, dp(14))
-                setOnClickListener { select(i) }
-            }
-            tabButtons += b
-            bar.addView(b, LinearLayout.LayoutParams(0, -2, 1f))
+        val bar = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setBackgroundColor(col(R.color.surface)); setPadding(0, dp(6), 0, dp(6)) }
+        TAB_NAMES.forEachIndexed { i, name ->
+            val t = TabView(this, TAB_ICONS[i], getString(name)) { select(i) }
+            tabs += t
+            bar.addView(t, LinearLayout.LayoutParams(0, -2, 1f))
         }
         root.addView(bar)
         setContentView(root)
@@ -136,11 +133,8 @@ class MainActivity : Activity() {
             else -> getString(R.string.state_connecting)
         }
         status.setTextColor(col(if (app.linkState == BleCentral.State.CONNECTED) R.color.ok else R.color.muted))
-        tabButtons.forEachIndexed { i, b ->
-            val badge = when (i) { TAB_RECENTS -> s.missedCount; TAB_MESSAGES -> s.unreadTotal; else -> 0 }
-            b.text = getString(listOf(R.string.tab_recents, R.string.tab_contacts, R.string.tab_keypad, R.string.tab_messages, R.string.tab_link)[i]) +
-                if (badge > 0) " ($badge)" else ""
-            b.setTextColor(col(if (i == tab) R.color.accent else R.color.muted))
+        tabs.forEachIndexed { i, t ->
+            t.update(selected = i == tab, badge = when (i) { TAB_RECENTS -> s.missedCount; TAB_MESSAGES -> s.unreadTotal; else -> 0 })
         }
         renderBanner()
         when (tab) {
@@ -155,32 +149,37 @@ class MainActivity : Activity() {
     private fun renderBanner() {
         banner.removeAllViews()
         app.state.problem?.let { p ->
+            // Tap to dismiss.
             banner.addView(label(describe(p), R.color.warn, 14f).apply {
-                setPadding(dp(12), dp(8), dp(12), dp(8))
-                background = GradientDrawable().apply { setColor(col(R.color.surface)); cornerRadius = dp(10).toFloat() }
-                setOnClickListener { app.state.problem = null; render() }
-            })
+                setPadding(dp(12), dp(10), dp(12), dp(10)); minHeight = dp(48)
+                pressableCard(R.color.surface) { app.state.problem = null; render() }
+            }, bannerParams())
         }
         app.micWarning?.takeIf { app.identity.isPaired }?.let { w ->
             banner.addView(label(getString(micText(w)), R.color.warn, 14f).apply {
-                setPadding(dp(12), dp(8), dp(12), dp(8))
+                setPadding(dp(12), dp(10), dp(12), dp(10))
                 background = GradientDrawable().apply { setColor(col(R.color.surface)); cornerRadius = dp(10).toFloat() }
-            })
+            }, bannerParams())
         }
         app.calls.calls.firstOrNull()?.let { c ->
-            banner.addView(label("☎ " + (c.name ?: app.format(c.number)) + " · " + stateWord(c.state), R.color.background, 14f).apply {
-                setPadding(dp(12), dp(10), dp(12), dp(10))
-                background = GradientDrawable().apply { setColor(col(R.color.ok)); cornerRadius = dp(10).toFloat() }
-                setOnClickListener { app.openCallScreen() }
-            })
+            // The call in progress: tap to go back to the call screen.
+            banner.addView(label((c.name ?: app.format(c.number)) + " · " + stateWord(c.state), R.color.background, 14f, bold = true).apply {
+                setPadding(dp(12), dp(10), dp(12), dp(10)); minHeight = dp(48); gravity = Gravity.CENTER_VERTICAL
+                setCompoundDrawablesRelative(icon(R.drawable.ic_call, R.color.background, 18), null, null, null); compoundDrawablePadding = dp(10)
+                pressableCard(R.color.ok) { app.openCallScreen() }
+            }, bannerParams())
         }
         for (r in app.calls.remote.values) {
             banner.addView(row(
                 label(getString(R.string.call_elsewhere, app.displayName(r.num), r.where ?: getString(R.string.another_device)), R.color.text, 14f).weight(),
-                pill(getString(R.string.move_here)) { app.calls.take(r.cid) },
-            ).apply { setPadding(dp(12), dp(4), dp(4), dp(4)); background = GradientDrawable().apply { setColor(col(R.color.surface)); cornerRadius = dp(10).toFloat() } })
+                button(getString(R.string.move_here), iconId = R.drawable.ic_call) { app.calls.take(r.cid) }.apply {
+                    layoutParams = LinearLayout.LayoutParams(-2, -2).apply { setMargins(dp(8), dp(4), dp(4), dp(4)) }
+                },
+            ).apply { setPadding(dp(12), dp(2), dp(4), dp(2)); background = GradientDrawable().apply { setColor(col(R.color.surface)); cornerRadius = dp(10).toFloat() } }, bannerParams())
         }
     }
+
+    private fun bannerParams() = LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(6) }
 
     private fun stateWord(s: String) = getString(when (s) {
         "ringing" -> R.string.call_ringing; "dialing", "connecting" -> R.string.call_dialing
@@ -234,7 +233,7 @@ class MainActivity : Activity() {
     private fun recents() {
         val s = app.state
         val items = s.recents.filter { Search.matches(query, listOfNotNull(it.name, s.name(it.num)), listOf(it.num)) }
-        val clear = pill(getString(R.string.clear_all), secondary = true) {
+        val clear = iconButton(R.drawable.ic_delete_sweep, getString(R.string.clear_all), R.color.accent) {
             AlertDialog.Builder(this).setMessage(R.string.clear_recents_confirm)
                 .setPositiveButton(R.string.clear_all) { _, _ -> s.clearRecents() }.setNegativeButton(android.R.string.cancel, null).show()
         }
@@ -271,7 +270,7 @@ class MainActivity : Activity() {
         val items = ArrayList<Any>()
         if (favs.isNotEmpty()) { items += getString(R.string.favourites); items.addAll(favs); items += getString(R.string.all_contacts) }
         items.addAll(all)
-        val add = pill(getString(R.string.add), secondary = true) { editContact(null) }
+        val add = iconButton(R.drawable.ic_person_add, getString(R.string.new_contact), R.color.accent) { editContact(null) }
         listScreen(getString(R.string.search), add, Rows(items) { it ->
             if (it is String) label(it.uppercase(), R.color.accent, 12f, bold = true).apply { setPadding(dp(4), dp(12), 0, dp(4)) }
             else (it as Contact).let { c -> rowView(avatar(c.name, c.photo), (if (c.starred) "★ " else "") + c.name, c.phones.firstOrNull()?.let { p -> app.format(p.n) }, null) }
@@ -307,40 +306,64 @@ class MainActivity : Activity() {
 
     // ------------------------------------------------------------------ Keypad
 
+    private var keypadRoot: View? = null
+    private lateinit var keypadNumber: TextView
+    private lateinit var keypadWho: TextView
+    private lateinit var keypadBack: View
+    private lateinit var keypadCalls: LinearLayout
+    private lateinit var keypadAdd: View
+
+    /** The keypad is built once while it is shown; a key press or a state change only updates its texts and buttons. */
     private fun keypad() {
         list = null; listTab = -1
-        content.removeAllViews()
-        val box = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL; setPadding(dp(24), dp(12), dp(24), dp(12)) }
-        val shown = label(if (number.isEmpty()) "" else app.format(number.toString()), size = 32f).apply { gravity = Gravity.CENTER; setSingleLine() }
-        val who = label(app.state.name(number.toString()) ?: "", R.color.muted, 14f).apply { gravity = Gravity.CENTER }
-        box.addView(shown, LinearLayout.LayoutParams(-1, dp(56)))
-        box.addView(who, LinearLayout.LayoutParams(-1, -2))
+        if (keypadRoot?.parent == null) {
+            content.removeAllViews()
+            content.addView(buildKeypad().also { keypadRoot = it })
+        }
+        updateKeypad()
+    }
+
+    private fun buildKeypad(): View {
+        val box = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL; setPadding(dp(24), dp(8), dp(24), dp(16)) }
+        // The number, centred, with backspace at its end (a spacer of the same width keeps it centred).
+        keypadNumber = label("", size = 32f).apply { gravity = Gravity.CENTER; setSingleLine(); ellipsize = android.text.TextUtils.TruncateAt.START
+            textDirection = View.TEXT_DIRECTION_LTR }
+        keypadBack = iconButton(R.drawable.ic_backspace, getString(R.string.delete_digit), R.color.muted,
+            onLong = { number.clear(); updateKeypad() }) { if (number.isNotEmpty()) number.deleteCharAt(number.length - 1); updateKeypad() }
+        box.addView(row(View(this).apply { layoutParams = LinearLayout.LayoutParams(dp(48), dp(48)) }, keypadNumber.weight(), keypadBack),
+            LinearLayout.LayoutParams(-1, dp(64)))
+        keypadWho = label("", R.color.muted, 14f).apply { gravity = Gravity.CENTER; setSingleLine() }
+        box.addView(keypadWho, LinearLayout.LayoutParams(-1, -2))
         val grid = GridLayout(this).apply { columnCount = 3; layoutDirection = View.LAYOUT_DIRECTION_LTR }
         val keys = listOf("1" to "", "2" to "ABC", "3" to "DEF", "4" to "GHI", "5" to "JKL", "6" to "MNO", "7" to "PQRS", "8" to "TUV", "9" to "WXYZ", "*" to "", "0" to "+", "#" to "")
         for ((k, sub) in keys) {
-            val b = LinearLayout(this).apply {
-                orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
-                background = round(R.color.surface, 76)
-                addView(label(k, size = 28f).apply { gravity = Gravity.CENTER })
-                if (sub.isNotEmpty()) addView(label(sub, R.color.muted, 10f).apply { gravity = Gravity.CENTER })
-                setOnClickListener { number.append(k); keypad() }
-                if (k == "0") setOnLongClickListener { number.append("+"); keypad(); true }
-            }
-            grid.addView(b, GridLayout.LayoutParams().apply { width = dp(76); height = dp(76); setMargins(dp(10), dp(8), dp(10), dp(8)) })
+            grid.addView(dialKey(k, sub, onLong = if (k == "0") ({ number.append("+"); updateKeypad() }) else null) { number.append(k); updateKeypad() },
+                GridLayout.LayoutParams().apply { width = dp(76); height = dp(76); setMargins(dp(10), dp(6), dp(10), dp(6)) })
         }
-        box.addView(grid)
+        box.addView(grid, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(8) })
+        keypadCalls = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER }
+        box.addView(keypadCalls, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
+        keypadAdd = button(getString(R.string.add_contact), Look.TEXT, iconId = R.drawable.ic_person_add) { editContact(null, number.toString()) }
+        box.addView(keypadAdd, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(4) })
+        return ScrollView(this).apply { addView(box) }
+    }
+
+    private fun updateKeypad() {
+        val n = number.toString()
+        keypadNumber.text = if (n.isEmpty()) "" else app.format(n)
+        val name = app.state.name(n)
+        keypadWho.text = name ?: ""
+        keypadBack.visibility = if (n.isEmpty()) View.INVISIBLE else View.VISIBLE
+        keypadAdd.visibility = if (n.isNotEmpty() && name == null) View.VISIBLE else View.INVISIBLE
+        // One green call button, or one per SIM labelled with its name.
+        keypadCalls.removeAllViews()
         val sims = app.state.sims
-        val callRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER; setPadding(0, dp(12), 0, 0) }
-        if (sims.size > 1) for (sim in sims) callRow.addView(pill(sim.name.ifEmpty { getString(R.string.sim_n, sim.slot + 1) }, colorId = R.color.ok) {
-            app.dial(number.toString(), sim.sub); number.clear(); keypad()
-        }) else callRow.addView(pill(getString(R.string.call), colorId = R.color.ok) { app.dial(number.toString(), app.state.defaultSub); number.clear(); keypad() })
-        callRow.addView(pill("⌫", secondary = true) { if (number.isNotEmpty()) number.deleteCharAt(number.length - 1); keypad() }.apply {
-            setOnLongClickListener { number.clear(); keypad(); true }
-        })
-        box.addView(callRow)
-        if (number.isNotEmpty() && app.state.name(number.toString()) == null)
-            box.addView(pill(getString(R.string.add_contact), secondary = true) { editContact(null, number.toString()) })
-        content.addView(ScrollView(this).apply { addView(box) })
+        val targets = if (sims.size > 1) sims.map { it.name.ifEmpty { getString(R.string.sim_n, it.slot + 1) } to it.sub }
+            else listOf(getString(R.string.call) to app.state.defaultSub)
+        for ((label, sub) in targets) keypadCalls.addView(roundAction(R.drawable.ic_call, label, R.color.ok) {
+            if (number.isEmpty()) return@roundAction
+            app.dial(number.toString(), sub); number.clear(); updateKeypad()
+        }.apply { getChildAt(0).isEnabled = n.isNotEmpty() }, LinearLayout.LayoutParams(dp(112), -2))
     }
 
     // ------------------------------------------------------------------ Messages
@@ -349,7 +372,7 @@ class MainActivity : Activity() {
         val s = app.state
         val convs = s.conversations.filter { c -> Search.matches(query, listOfNotNull(s.name(c.address)), listOf(c.address)) ||
             (query.length > 1 && s.messages(c.thread).any { Search.fold(it.body).contains(Search.fold(query)) }) }
-        val compose = pill(getString(R.string.new_message), secondary = true) {
+        val compose = iconButton(R.drawable.ic_edit, getString(R.string.new_message), R.color.accent) {
             val f = EditText(this).apply { hint = getString(R.string.phone); inputType = InputType.TYPE_CLASS_PHONE }
             AlertDialog.Builder(this).setTitle(R.string.new_message).setView(FrameLayout(this).apply { setPadding(dp(20), dp(8), dp(20), 0); addView(f) })
                 .setPositiveButton(R.string.next) { _, _ -> dialable(f.text.toString()).takeIf { it.isNotEmpty() }?.let { openThread(it) } }
@@ -430,8 +453,10 @@ class MainActivity : Activity() {
         // Not paired yet: how to start, in plain words.
         if (!app.identity.isPaired) phone.addView(label(getString(R.string.pair_guide), R.color.muted, 13f))
         phone.addView(row(
-            pill(getString(if (app.identity.isPaired) R.string.pair_again else R.string.pair)) { startActivity(Intent(this, PairActivity::class.java)) },
-            *(if (app.identity.isPaired) arrayOf(pill(getString(R.string.unpair), secondary = true, colorId = R.color.bad) {
+            button(getString(if (app.identity.isPaired) R.string.pair_again else R.string.pair), if (app.identity.isPaired) Look.TONAL else Look.FILLED) {
+                startActivity(Intent(this, PairActivity::class.java))
+            },
+            *(if (app.identity.isPaired) arrayOf(button(getString(R.string.unpair), Look.TEXT, R.color.bad) {
                 AlertDialog.Builder(this).setMessage(R.string.unpair_confirm).setPositiveButton(R.string.unpair) { _, _ -> app.unpair() }
                     .setNegativeButton(android.R.string.cancel, null).show()
             }) else emptyArray()),
@@ -468,14 +493,18 @@ class MainActivity : Activity() {
             val sims = s.sims
             if (sims.size > 1) {
                 val dataSub = net?.optInt("dataSub", -1) ?: -1
-                sw.addView(row(label(getString(R.string.data_sim), size = 16f).weight(), *sims.map { sim ->
-                    pill(sim.name.ifEmpty { getString(R.string.sim_n, sim.slot + 1) }, secondary = sim.sub != dataSub) { if (sim.sub != dataSub) s.setDataSim(sim.sub) }
+                // The data SIM: one choice per SIM, the chosen one filled.
+                sw.addView(label(getString(R.string.data_sim), size = 16f).apply { setPadding(0, dp(10), 0, 0) })
+                sw.addView(evenRow(*sims.map { sim ->
+                    button(sim.name.ifEmpty { getString(R.string.sim_n, sim.slot + 1) }, if (sim.sub == dataSub) Look.FILLED else Look.TONAL) {
+                        if (sim.sub != dataSub) s.setDataSim(sim.sub)
+                    }.apply { isEnabled = s.netPending == null; isSelected = sim.sub == dataSub }
                 }.toTypedArray()))
             }
             for (sim in sims) {
                 val mode = net?.optJSONArray("rat")?.let { a -> (0 until a.length()).map { a.getJSONObject(it) }.firstOrNull { it.optInt("slot") == sim.slot }?.optString("mode") }
                 sw.addView(row(label(getString(R.string.network_mode, sim.name.ifEmpty { getString(R.string.sim_n, sim.slot + 1) }), size = 16f).weight(),
-                    pill(mode ?: "–", secondary = true) {
+                    button(mode ?: "–", Look.TONAL) {
                         val modes = arrayOf("5G", "4G", "3G", "2G")
                         AlertDialog.Builder(this).setItems(modes) { _, w -> s.setNetworkMode(sim.slot, modes[w]) }.show()
                     }))
@@ -489,18 +518,18 @@ class MainActivity : Activity() {
         val me = card()
         me.addView(label(getString(R.string.this_phone).uppercase(), R.color.accent, 12f, bold = true))
         val pm = getSystemService(PowerManager::class.java)
-        if (!pm.isIgnoringBatteryOptimizations(packageName)) me.addView(pill(getString(R.string.allow_background), secondary = true) {
+        if (!pm.isIgnoringBatteryOptimizations(packageName)) me.addView(button(getString(R.string.allow_background), Look.OUTLINED) {
             runCatching { startActivity(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:$packageName"))) }
         })
-        if (!app.hasLinkPermissions()) me.addView(pill(getString(R.string.grant_permissions)) { askPermissions() })
+        if (!app.hasLinkPermissions()) me.addView(button(getString(R.string.grant_permissions)) { askPermissions() })
         app.link.roundTripMs?.let { me.addView(label(getString(R.string.round_trip, it), R.color.muted, 13f)) }
         me.addView(row(
-            pill(getString(R.string.report_title)) { ReportUi.send(this) { ClientReport.build(app) } },
+            button(getString(R.string.report_title), Look.TONAL) { ReportUi.send(this) { ClientReport.build(app) } },
         ))
         me.addView(label(getString(R.string.report_hint), R.color.muted, 13f))
         me.addView(row(
-            pill(getString(R.string.link_log), secondary = true) { showLog() },
-            *(if (connected) arrayOf(pill(getString(R.string.selftest), secondary = true) { s.runSelftest() }) else emptyArray()),
+            button(getString(R.string.link_log), Look.TEXT) { showLog() },
+            *(if (connected) arrayOf(button(getString(R.string.selftest), Look.TEXT) { s.runSelftest() }) else emptyArray()),
         ))
         s.selftest?.let { t ->
             val m = t.optJSONArray("methods")
@@ -523,5 +552,7 @@ class MainActivity : Activity() {
     companion object {
         const val EXTRA_TAB = "tab"; const val EXTRA_NUMBER = "number"
         const val TAB_RECENTS = 0; const val TAB_CONTACTS = 1; const val TAB_KEYPAD = 2; const val TAB_MESSAGES = 3; const val TAB_LINK = 4
+        private val TAB_NAMES = listOf(R.string.tab_recents, R.string.tab_contacts, R.string.tab_keypad, R.string.tab_messages, R.string.tab_link)
+        private val TAB_ICONS = listOf(R.drawable.ic_history, R.drawable.ic_person, R.drawable.ic_dialpad, R.drawable.ic_chat, R.drawable.ic_link)
     }
 }

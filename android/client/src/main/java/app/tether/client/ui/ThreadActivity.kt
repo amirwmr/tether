@@ -23,7 +23,8 @@ class ThreadActivity : Activity() {
     private lateinit var list: ListView
     private lateinit var input: EditText
     private lateinit var title: android.widget.TextView
-    private lateinit var simButton: android.widget.Button
+    private lateinit var simButton: android.widget.TextView
+    private lateinit var sendButton: View
     private var sub: Int? = null
     private var lastCount = -1
     private val listener: () -> Unit = { render() }
@@ -39,20 +40,33 @@ class ThreadActivity : Activity() {
         val header = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(dp(16), dp(12), dp(8), dp(8)) }
         title = label(app.displayName(address), size = 19f, bold = true).apply { setSingleLine() }
         header.addView(title.weight())
-        header.addView(pill(getString(R.string.call), secondary = true) { app.dial(address, sub) })
-        header.addView(pill("⋯", secondary = true) { menu() })
+        header.addView(iconButton(R.drawable.ic_call, getString(R.string.call), R.color.accent) { app.dial(address, sub) })
+        header.addView(iconButton(R.drawable.ic_more_vert, getString(R.string.more_options)) { menu() })
         root.addView(header)
         list = ListView(this).apply { divider = null; transcriptMode = ListView.TRANSCRIPT_MODE_NORMAL; isStackFromBottom = true }
         root.addView(list, LinearLayout.LayoutParams(-1, 0, 1f))
         val bar = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(dp(8), dp(6), dp(8), dp(8)) }
-        simButton = pill("", secondary = true) { pickSim() }
+        // The SIM this text goes out on (dual-SIM phones only): tap to choose.
+        simButton = button("", Look.TONAL) { pickSim() }.apply {
+            textSize = 13f; setPadding(dp(14), dp(4), dp(14), dp(4))
+            layoutParams = LinearLayout.LayoutParams(-2, -2).apply { marginEnd = dp(8) }
+        }
         bar.addView(simButton)
         input = EditText(this).apply {
             hint = getString(R.string.text_message); setTextColor(col(R.color.text)); setHintTextColor(col(R.color.muted)); maxLines = 5
             setText(app.state.draft(address))
+            addTextChangedListener(object : android.text.TextWatcher {
+                override fun beforeTextChanged(t: CharSequence?, a: Int, b: Int, c: Int) {}
+                override fun onTextChanged(t: CharSequence?, a: Int, b: Int, c: Int) {}
+                override fun afterTextChanged(e: android.text.Editable?) { sendButton.isEnabled = !e.isNullOrBlank() }
+            })
         }
         bar.addView(input.weight())
-        bar.addView(pill(getString(R.string.send)) { send() })
+        sendButton = fab(R.drawable.ic_send, getString(R.string.send)) { send() }.apply {
+            (layoutParams as LinearLayout.LayoutParams).marginStart = dp(8)
+            isEnabled = input.text.isNotBlank()
+        }
+        bar.addView(sendButton)
         root.addView(bar)
         setContentView(root)
         fitSystemBars(root)

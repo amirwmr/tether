@@ -13,7 +13,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.WindowInsets
 import android.widget.BaseAdapter
-import android.widget.Button
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -55,18 +54,6 @@ fun Context.label(t: CharSequence, colorId: Int = R.color.text, size: Float = 15
     if (bold) setTypeface(typeface, Typeface.BOLD)
 }
 
-fun Context.pill(t: String, secondary: Boolean = false, colorId: Int = R.color.accent, onClick: () -> Unit) = Button(this).apply {
-    text = t; isAllCaps = false; textSize = 15f
-    setTextColor(if (secondary) col(colorId) else col(R.color.background))
-    background = GradientDrawable().apply {
-        cornerRadius = dp(20).toFloat()
-        if (secondary) setStroke(dp(1), col(colorId)) else setColor(col(colorId))
-    }
-    layoutParams = LinearLayout.LayoutParams(-2, dp(42)).apply { topMargin = dp(6); marginEnd = dp(8) }
-    setPadding(dp(16), 0, dp(16), 0)
-    setOnClickListener { onClick() }
-}
-
 fun Context.round(colorId: Int, sizeDp: Int) = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(col(colorId)); setSize(dp(sizeDp), dp(sizeDp)) }
 
 fun Context.card() = LinearLayout(this).apply {
@@ -88,9 +75,8 @@ fun View.weight(w: Float = 1f): View { layoutParams = LinearLayout.LayoutParams(
 fun Context.evenRow(vararg buttons: TextView) = LinearLayout(this).apply {
     orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
     buttons.forEachIndexed { i, b ->
-        val h = (b.layoutParams as? LinearLayout.LayoutParams)?.height ?: dp(42)
-        b.setSingleLine(); b.ellipsize = android.text.TextUtils.TruncateAt.END; b.setPadding(dp(8), 0, dp(8), 0)
-        addView(b, LinearLayout.LayoutParams(0, h, 1f).apply {
+        b.setSingleLine(); b.ellipsize = android.text.TextUtils.TruncateAt.END; b.setPadding(dp(8), dp(8), dp(8), dp(8))
+        addView(b, LinearLayout.LayoutParams(0, -2, 1f).apply {
             topMargin = dp(6); marginStart = if (i == 0) 0 else dp(4); marginEnd = if (i == buttons.lastIndex) 0 else dp(4)
         })
     }
