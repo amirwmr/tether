@@ -75,6 +75,10 @@ card in the Android app says which case you are in, and so does Link › Call au
    taken by the phone` (the other side hears nothing of the iPhone), `routed …: NOT the call's uplink` in the
    `call audio path:` line (the iPhone's voice plays on the Android phone instead of going into the call), and
    `opened … s after the start` when the call took long to get its audio.
+   Only zeros for 15 s of a call gives that call back to the Android phone (its earpiece and microphone); the phone is
+   remembered as giving no call audio only after two such calls in a row (a far end that says nothing reads as zeros
+   too). Choosing any option of the phone's own microphone setting, a self-test that hears call audio, a system update
+   or reinstalling Tether forgets it.
 
 ### Headset or car
 

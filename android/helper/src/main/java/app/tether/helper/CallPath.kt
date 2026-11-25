@@ -38,7 +38,9 @@ class OpenGate(private val graceMs: Long = 2000, private val activeMs: Long = 30
  * (issues #13, #14): the downlink capture delivering nothing or only zeros although the call is active, the injected
  * uplink not being taken by the phone (its play position standing still), the track not routed to the call. Pure.
  */
-class PathWatch(private val testLine: Boolean, private val deadSeconds: Int = 6, private val stuckSeconds: Int = 3) {
+// deadSeconds: 15, not 6: a far end that says nothing for the first seconds of a VoLTE call (DTX, no comfort noise)
+// gives exact zeros too, and one such call took call audio away from the phone for good.
+class PathWatch(private val testLine: Boolean, private val deadSeconds: Int = 15, private val stuckSeconds: Int = 3) {
     /**
      * One second: whether the call was active, downlink frames read and their non-zero samples, whether uplink audio
      * was waiting for the track (written this second, or queued: a track nobody takes from blocks its writer), and how

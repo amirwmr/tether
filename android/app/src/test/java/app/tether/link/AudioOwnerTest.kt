@@ -48,6 +48,11 @@ class AudioOwnerTest {
         assertFalse(AudioOwner.elsewhere("ringing", iphone, iphone, blocked = true))
     }
 
+    @Test fun oneSilentCallDoesNotBlockThePhone() {
+        assertEquals("first call of zeros: not remembered", 1 to false, AudioOwner.zeroCall(0))
+        assertEquals("second in a row: remembered", 2 to true, AudioOwner.zeroCall(1))
+    }
+
     @Test fun blockedIsRememberedPerFirmware() {
         assertTrue(AudioOwner.blocked("samsung/a73xq/a73xq:16/X/1:user/release-keys", "samsung/a73xq/a73xq:16/X/1:user/release-keys"))
         assertFalse("a system update clears it", AudioOwner.blocked("samsung/a73xq/a73xq:16/X/1:user/release-keys", "samsung/a73xq/a73xq:16/Y/2:user/release-keys"))

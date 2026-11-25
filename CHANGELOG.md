@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- SIM phone: **one silent call no longer stops call audio for good.** The "This Android phone's software gives
+  Tether no call audio" notice could appear after a single call whose first 6 seconds were digital silence (a far
+  end that says nothing on VoLTE). From then on every answered call went back to the SIM phone, so the client's call
+  screen closed as soon as you answered.
+  - The check now waits 15 seconds of silence.
+  - Only that call goes back to the SIM phone.
+  - The phone is remembered as giving no call audio only after two such calls in a row.
+  - Every Tether install tries again; test builds share a version number, so a new install did not clear it before.
+
 - SIM phone: once Tether's call screen is up, the incoming-call notification no longer pops up over it and keeps the
   screen awake. It stays in the notification bar with Answer and Decline, on a quiet channel ("Call in progress
   (quiet)"). The ringtone is unchanged: Android plays it. The next call starts with the usual pop-up again.
