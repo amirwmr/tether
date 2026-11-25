@@ -55,7 +55,7 @@ class MainActivity : Activity() {
         super.onCreate(savedInstanceState)
         tab = savedInstanceState?.getInt("tab") ?: if (app.identity.isPaired) TAB_RECENTS else TAB_LINK
         val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(col(R.color.background)) }
-        val header = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(dp(16), dp(14), dp(16), dp(6)) }
+        val header = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; isBaselineAligned = false; gravity = Gravity.CENTER_VERTICAL; setPadding(dp(16), dp(14), dp(16), dp(6)) }
         header.addView(label(getString(R.string.app_name), size = 22f, bold = true).weight())
         status = label("", R.color.muted, 13f)
         header.addView(status)
@@ -64,7 +64,7 @@ class MainActivity : Activity() {
         root.addView(banner)
         content = FrameLayout(this)
         root.addView(content, LinearLayout.LayoutParams(-1, 0, 1f))
-        val bar = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setBackgroundColor(col(R.color.surface)); setPadding(0, dp(6), 0, dp(6)) }
+        val bar = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; isBaselineAligned = false; setBackgroundColor(col(R.color.surface)); setPadding(0, dp(6), 0, dp(6)) }
         TAB_NAMES.forEachIndexed { i, name ->
             val t = TabView(this, TAB_ICONS[i], getString(name)) { select(i) }
             tabs += t
@@ -192,7 +192,7 @@ class MainActivity : Activity() {
             content.removeAllViews()
             val box = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(12), 0, dp(12), 0) }
             if (hint != null || extra != null) {
-                val top = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+                val top = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; isBaselineAligned = false; gravity = Gravity.CENTER_VERTICAL }
                 if (hint != null) top.addView(EditText(this).apply {
                     this.hint = hint; setText(query); setSingleLine(); setTextColor(col(R.color.text)); setHintTextColor(col(R.color.muted))
                     addTextChangedListener(object : TextWatcher {
@@ -219,7 +219,7 @@ class MainActivity : Activity() {
 
     private fun rowView(avatar: View?, title: CharSequence, subtitle: CharSequence?, right: CharSequence?, titleColor: Int = R.color.text, bold: Boolean = false) =
         LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(dp(4), dp(10), dp(4), dp(10))
+            orientation = LinearLayout.HORIZONTAL; isBaselineAligned = false; gravity = Gravity.CENTER_VERTICAL; setPadding(dp(4), dp(10), dp(4), dp(10))
             avatar?.let { addView(it) }
             val texts = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL }
             texts.addView(label(title, titleColor, 16f, bold).apply { setSingleLine() })
@@ -326,13 +326,13 @@ class MainActivity : Activity() {
     private fun buildKeypad(): View {
         val box = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL; setPadding(dp(24), dp(8), dp(24), dp(16)) }
         // The number, centred, with backspace at its end (a spacer of the same width keeps it centred).
-        keypadNumber = label("", size = 32f).apply { gravity = Gravity.CENTER; setSingleLine(); ellipsize = android.text.TextUtils.TruncateAt.START
+        keypadNumber = label("", size = 32f).apply { gravity = Gravity.CENTER; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.START
             textDirection = View.TEXT_DIRECTION_LTR }
         keypadBack = iconButton(R.drawable.ic_backspace, getString(R.string.delete_digit), R.color.muted,
             onLong = { number.clear(); updateKeypad() }) { if (number.isNotEmpty()) number.deleteCharAt(number.length - 1); updateKeypad() }
         box.addView(row(View(this).apply { layoutParams = LinearLayout.LayoutParams(dp(48), dp(48)) }, keypadNumber.weight(), keypadBack),
             LinearLayout.LayoutParams(-1, dp(64)))
-        keypadWho = label("", R.color.muted, 14f).apply { gravity = Gravity.CENTER; setSingleLine() }
+        keypadWho = label("", R.color.muted, 14f).apply { gravity = Gravity.CENTER; maxLines = 1 }
         box.addView(keypadWho, LinearLayout.LayoutParams(-1, -2))
         val grid = GridLayout(this).apply { columnCount = 3; layoutDirection = View.LAYOUT_DIRECTION_LTR }
         val keys = listOf("1" to "", "2" to "ABC", "3" to "DEF", "4" to "GHI", "5" to "JKL", "6" to "MNO", "7" to "PQRS", "8" to "TUV", "9" to "WXYZ", "*" to "", "0" to "+", "#" to "")
@@ -341,7 +341,7 @@ class MainActivity : Activity() {
                 GridLayout.LayoutParams().apply { width = dp(76); height = dp(76); setMargins(dp(10), dp(6), dp(10), dp(6)) })
         }
         box.addView(grid, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(8) })
-        keypadCalls = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER }
+        keypadCalls = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; isBaselineAligned = false; gravity = Gravity.CENTER }
         box.addView(keypadCalls, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
         keypadAdd = button(getString(R.string.add_contact), Look.TEXT, iconId = R.drawable.ic_person_add) { editContact(null, number.toString()) }
         box.addView(keypadAdd, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(4) })

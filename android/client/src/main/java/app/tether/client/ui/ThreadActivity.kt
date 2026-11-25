@@ -37,7 +37,7 @@ class ThreadActivity : Activity() {
         // A text sent into a new conversation gets its real thread id with the provider row: follow it.
         app.state.onThreadMoved = { from, to -> if (from == thread) thread = to }
         val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(col(R.color.background)) }
-        val header = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(dp(16), dp(12), dp(8), dp(8)) }
+        val header = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; isBaselineAligned = false; gravity = Gravity.CENTER_VERTICAL; setPadding(dp(16), dp(12), dp(8), dp(8)) }
         title = label(app.displayName(address), size = 19f, bold = true).apply { setSingleLine() }
         header.addView(title.weight())
         header.addView(iconButton(R.drawable.ic_call, getString(R.string.call), R.color.accent) { app.dial(address, sub) })
@@ -45,7 +45,7 @@ class ThreadActivity : Activity() {
         root.addView(header)
         list = ListView(this).apply { divider = null; transcriptMode = ListView.TRANSCRIPT_MODE_NORMAL; isStackFromBottom = true }
         root.addView(list, LinearLayout.LayoutParams(-1, 0, 1f))
-        val bar = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(dp(8), dp(6), dp(8), dp(8)) }
+        val bar = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; isBaselineAligned = false; gravity = Gravity.CENTER_VERTICAL; setPadding(dp(8), dp(6), dp(8), dp(8)) }
         // The SIM this text goes out on (dual-SIM phones only): tap to choose.
         simButton = button("", Look.TONAL) { pickSim() }.apply {
             textSize = 13f; setPadding(dp(14), dp(4), dp(14), dp(4))

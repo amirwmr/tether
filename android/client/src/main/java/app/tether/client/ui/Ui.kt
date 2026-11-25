@@ -63,9 +63,19 @@ fun Context.card() = LinearLayout(this).apply {
     layoutParams = LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(12) }
 }
 
+/**
+ * A horizontal row. A centred LinearLayout moves a child with uneven top and bottom margins down by half their
+ * difference, past the row's bottom edge, where it is cut off: a button's 6dp top margin (its spacing in a column) lost
+ * the bottom of the button. In a row the margin is split evenly above and below. No baseline alignment either.
+ */
 fun Context.row(vararg views: View, gravity: Int = Gravity.CENTER_VERTICAL) = LinearLayout(this).apply {
-    orientation = LinearLayout.HORIZONTAL; this.gravity = gravity
-    views.forEach { addView(it) }
+    orientation = LinearLayout.HORIZONTAL; isBaselineAligned = false; this.gravity = gravity
+    views.forEach { v ->
+        (v.layoutParams as? LinearLayout.LayoutParams)?.let { lp ->
+            val m = (lp.topMargin + lp.bottomMargin) / 2; lp.topMargin = m; lp.bottomMargin = m
+        }
+        addView(v)
+    }
 }
 
 fun View.weight(w: Float = 1f): View { layoutParams = LinearLayout.LayoutParams(0, -2, w); return this }
@@ -73,11 +83,13 @@ fun View.weight(w: Float = 1f): View { layoutParams = LinearLayout.LayoutParams(
 /** A row of buttons sharing the width equally (one line each), so long labels (Persian, "Bluetooth") never push a
  *  button off the screen (#12). */
 fun Context.evenRow(vararg buttons: TextView) = LinearLayout(this).apply {
-    orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
+    orientation = LinearLayout.HORIZONTAL; isBaselineAligned = false; gravity = Gravity.CENTER_VERTICAL
     buttons.forEachIndexed { i, b ->
-        b.setSingleLine(); b.ellipsize = android.text.TextUtils.TruncateAt.END; b.setPadding(dp(8), dp(8), dp(8), dp(8))
+        // One line, but not setSingleLine(): that also scrolls the text sideways, which with centred text drew a SIM's
+        // name outside its button.
+        b.maxLines = 1; b.ellipsize = android.text.TextUtils.TruncateAt.END; b.setPadding(dp(8), dp(8), dp(8), dp(8))
         addView(b, LinearLayout.LayoutParams(0, -2, 1f).apply {
-            topMargin = dp(6); marginStart = if (i == 0) 0 else dp(4); marginEnd = if (i == buttons.lastIndex) 0 else dp(4)
+            topMargin = dp(3); bottomMargin = dp(3); marginStart = if (i == 0) 0 else dp(4); marginEnd = if (i == buttons.lastIndex) 0 else dp(4)
         })
     }
 }

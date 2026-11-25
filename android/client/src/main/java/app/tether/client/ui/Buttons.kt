@@ -144,8 +144,9 @@ fun Context.roundAction(iconId: Int, text: String, colorId: Int = R.color.accent
 
 /** Round actions sharing the width equally, centred, on one line. */
 fun Context.actionRow(vararg actions: View) = LinearLayout(this).apply {
-    orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER
-    actions.forEach { addView(it, LinearLayout.LayoutParams(0, -2, 1f).apply { topMargin = dp(12) }) }
+    orientation = LinearLayout.HORIZONTAL; isBaselineAligned = false; gravity = Gravity.CENTER
+    // Even margins above and below: a centred row moves a child with only a top margin down past its own bottom edge.
+    actions.forEach { addView(it, LinearLayout.LayoutParams(0, -2, 1f).apply { topMargin = dp(6); bottomMargin = dp(6) }) }
 }
 
 /** Makes a whole card or banner pressable: a ripple over its [fill] colour with [radiusDp] corners. */
@@ -196,7 +197,7 @@ class TabView(ctx: Context, iconId: Int, private val name: String, onClick: () -
         }
         pill.addView(badge, FrameLayout.LayoutParams(-2, ctx.dp(16), Gravity.TOP or Gravity.END).apply { topMargin = ctx.dp(0); marginEnd = ctx.dp(10) })
         addView(pill, LayoutParams(ctx.dp(56), ctx.dp(30)))
-        text.apply { gravity = Gravity.CENTER; setSingleLine(); ellipsize = TextUtils.TruncateAt.END }
+        text.apply { gravity = Gravity.CENTER; maxLines = 1; ellipsize = TextUtils.TruncateAt.END }
         addView(text, LayoutParams(-2, -2).apply { topMargin = ctx.dp(2) })
         isClickable = true; isFocusable = true
         setOnClickListener { onClick() }
