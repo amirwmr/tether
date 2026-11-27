@@ -5,7 +5,7 @@ title: Install guide
 # Install guide
 
 Everything from downloading to the first call, without building anything. [راهنمای فارسی](fa/README.md) ·
-Questions: [FAQ](FAQ.md).
+[Interactive Persian guide](fa/install.html) · Questions: [FAQ](FAQ.md).
 
 ## What is Tether, in short
 

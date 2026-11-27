@@ -26,6 +26,7 @@ Android phone, over an end-to-end encrypted Bluetooth link. No server, no accoun
   <a href="docs/INSTALL.md">Install guide</a> ·
   <a href="docs/FAQ.md">FAQ</a> ·
   <a href="docs/fa/README.md">فارسی</a> ·
+  <a href="docs/fa/install.html">Interactive Persian guide</a> ·
   <a href="#build-on-tether">Build on Tether</a> ·
   <a href="#documentation">Docs</a> ·
   <a href="docs/ROADMAP.md">Roadmap</a> ·

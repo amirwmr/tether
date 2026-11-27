@@ -8,7 +8,7 @@ dir: rtl
 
 # راهنمای فارسی Tether (تتر)
 
-[English install guide](../INSTALL.md) · [پرسش‌های رایج](faq.md)
+[English install guide](../INSTALL.md) · [راهنمای تعاملی نصب](install.html) · [پرسش‌های رایج](faq.md)
 
 ## تتر چیست؟ (به زبان ساده)
 

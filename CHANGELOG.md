@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Docs: add an interactive Persian installation guide with device-specific steps, checklists, and troubleshooting.
+
 ## 1.2.5 — 2026-11-25
 
 - iPhone: Tether sets its CallKit provider up again when iOS restarted its call service under the running app. Until
