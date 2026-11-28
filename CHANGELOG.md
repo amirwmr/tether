@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.2.10 — 2026-11-28
+
 ### Call audio and the link
 
 - Android phone, call-audio diagnostics: an error without a message (as on a Honor 200 with Android 16, where every
